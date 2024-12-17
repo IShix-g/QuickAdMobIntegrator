@@ -10,6 +10,10 @@ Simplify the integration of Google AdMob into Unity and seamlessly set up mobile
 
 ![add package](Docs/header.png)
 
+- Easily install AdMob and mediation packages
+- Quickly check for update information at a glance
+- Built on the Unity Package Manager (UPM) for reliability
+
 ## Getting Started
 
 ### Installation via Git URL
@@ -66,6 +70,8 @@ Click the `Install All` button to install all displayed SDKs and mediation packa
 2. Reload Packages
 3. Open Unity Package Manager
 4. Install or update all SDK and mediation packages
+5. View the Getting Started Guide / Help
+6. Install packages
 
 ## Displaying Current Package Status
 

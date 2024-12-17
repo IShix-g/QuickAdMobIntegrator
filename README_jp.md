@@ -8,6 +8,10 @@ UnityのGoogle AdMob統合を簡素化し、モバイル広告のシームレス
 
 ![add package](Docs/header.png)
 
+- Admobとメディエーションのパッケージを簡単にインストール
+- 更新情報を一目で確認
+- 内部ではPackage Manager(UPM)を利用しているので安心
+
 ## Getting Started
 
 ### Git Urlからインストール
@@ -62,6 +66,8 @@ URL: `https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdM
 2. パッケージのリロード
 3. Unity Package Managerを開く
 4. すべてのSDKとメディエーションパッケージのインストールまたはアップデート
+5. スタートガイド/ヘルプを表示
+6. パッケージのインストール
 
 ## 現在のパッケージの状態表示
 
