@@ -472,10 +472,11 @@ namespace QuickAdMobIntegrator.Editor
         
         string[] GetInstalledPackages()
         {
-            var packages = new List<string>
+            var packages = new List<string>();
+            if (_googleAdsPackageInfo.IsInstalled)
             {
-                _googleAdsPackageInfo.PackageInstallUrl
-            };
+                packages.Add(_googleAdsPackageInfo.PackageInstallUrl);
+            }
             
             foreach (var details in _mediationPackageInfos)
             {
