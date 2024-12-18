@@ -56,6 +56,17 @@ Click the back button to complete the initial setup.
 
 <img src="Docs/qai_end_setting.jpg" width="550"/>
 
+### For Those Who Have Already Installed AdMob
+
+Please delete the following items:
+
+- `Assets/ExternalDependencyManager`
+- `Assets/GoogleMobileAds` (excluding `Resources`)
+- `Assets/Plugins/Android/googlemobileads-unity.aar`
+- `Assets/Plugins/Android/GoogleMobileAdsPlugin`
+- `Assets/Plugins/iOS/GADUAdNetworkExtras`
+- `Assets/Plugins/iOS/unity-plugin-library.a`
+
 ### Install SDKs and Mediation Packages
 
 Click the `Install All` button to install all displayed SDKs and mediation packages.

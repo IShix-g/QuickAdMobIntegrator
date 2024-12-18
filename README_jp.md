@@ -52,6 +52,17 @@ URL: `https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdM
 
 <img src="Docs/qai_end_setting.jpg" width="550"/>
 
+### Admobをインストール済みの方
+
+下記を削除してください。
+
+- Assets/ExternalDependencyManager
+- Assets/GoogleMobileAds (Resources以外)
+- Assets/Plugins/Android/googlemobileads-unity.aar
+- Assets/Plugins/Android/GoogleMobileAdsPlugin
+- Assets/Plugins/iOS/GADUAdNetworkExtras
+- Assets/Plugins/iOS/unity-plugin-library.a
+
 ### SDKとメディエーションのインストール
 
 `Install All`ボタンをクリックする事で表示されているすべてのSDKとメディエーションをインストールします。
