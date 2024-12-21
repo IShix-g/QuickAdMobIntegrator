@@ -44,7 +44,7 @@ namespace UnityEditor
         {
             var manager = QAIManagerFactory.Create();
             manager.SetUpRegistry();
-            manager.FetchGoogleAdsPackageInfo()
+            manager.FetchGoogleAdsPackageInfo(true)
                 .Handled(task => Debug.Log(task.Result.Remote.name + " " + task.Result.Remote.version));
         }
     }

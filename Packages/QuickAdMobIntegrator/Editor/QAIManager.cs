@@ -37,15 +37,15 @@ namespace QuickAdMobIntegrator.Editor
             ManifestRegistryConfigurator.Add(Settings.Registry);
         }
 
-        public async Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(CancellationToken token = default)
+        public async Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(bool superReload, CancellationToken token = default)
         {
-            var details = await FetchPackageInfo(Settings.AdmobScope.OpenUpmInfoUrl, token);
+            var details = await FetchPackageInfo(Settings.AdmobScope.OpenUpmInfoUrl, superReload, token);
             var displayName = details.Remote.displayName;
             details.Remote.displayName = displayName.Replace("for Unity", "");
             return details;
         }
 
-        public async Task FetchMediationPackage(Action<int, PackageInfoDetails> onLoadedAction, CancellationToken token = default)
+        public async Task FetchMediationPackage(Action<int, PackageInfoDetails> onLoadedAction, bool superReload, CancellationToken token = default)
         {
             _isProcessingMediation = true;
             try
@@ -59,7 +59,7 @@ namespace QuickAdMobIntegrator.Editor
                     }
 
                     var index = i;
-                    tasks[i] = FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, token);
+                    tasks[i] = FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, token);
                     tasks[i].Handled(task =>
                     {
                         var details = task.Result;
@@ -76,8 +76,8 @@ namespace QuickAdMobIntegrator.Editor
             }
         }
         
-        public Task<PackageInfoDetails> FetchPackageInfo(string openUpmInfoUrl, CancellationToken token = default)
-            => _infoFetcher.FetchPackageInfo(openUpmInfoUrl, token);
+        public Task<PackageInfoDetails> FetchPackageInfo(string openUpmInfoUrl, bool superReload, CancellationToken token = default)
+            => _infoFetcher.FetchPackageInfo(openUpmInfoUrl, superReload, token);
         
         public void Dispose()
         {

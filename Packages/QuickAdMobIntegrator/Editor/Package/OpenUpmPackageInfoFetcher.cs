@@ -1,9 +1,11 @@
 
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Networking;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
@@ -12,6 +14,7 @@ namespace QuickAdMobIntegrator.Editor
     public sealed class OpenUpmPackageInfoFetcher
     {
         public static readonly Regex PackageRegex = new (@"https:\/\/[^\/]+\/([^\/]+)(?:\/([^\/]+))?", RegexOptions.Compiled);
+        public const string SgUpmPackageCachePath = "Library/PackageCache-QuickAdMobIntegrator";
         
         public bool IsProcessing{ get; private set; }
         bool _isDisposed;
@@ -20,7 +23,7 @@ namespace QuickAdMobIntegrator.Editor
         
         public OpenUpmPackageInfoFetcher(PackageInstaller installer) => _installer = installer;
         
-        public async Task<PackageInfoDetails> FetchPackageInfo(string openUpmPackageInfoUrl, CancellationToken token = default)
+        public async Task<PackageInfoDetails> FetchPackageInfo(string openUpmPackageInfoUrl, bool supperReload, CancellationToken token = default)
         {
             if (!openUpmPackageInfoUrl.StartsWith("https://package.openupm.com"))
             {
@@ -43,7 +46,23 @@ namespace QuickAdMobIntegrator.Editor
                         displayName = info.displayName
                     }
                     : default;
-                var server = await FetchPackageInfoFromOpenUpm(openUpmPackageInfoUrl);
+                
+                var server = default(PackageRemoteInfo);
+                var fileNameFromUrl = GenerateFileNameFromUrl(openUpmPackageInfoUrl);
+                if (!supperReload)
+                {
+                    server = await GetPackageInfoFromCache(fileNameFromUrl, token);
+                }
+
+                if (server == default)
+                {
+                    server = await FetchPackageInfoFromOpenUpm(openUpmPackageInfoUrl);
+                    if (server != default)
+                    {
+                        await SavePackageInfoToCache(fileNameFromUrl, server, token);
+                    }
+                }
+                
                 if (version != "latest")
                 {
                     name += "@" + version;
@@ -108,6 +127,65 @@ namespace QuickAdMobIntegrator.Editor
                         ? match.Groups[2].Value
                         : default;
             return (name, version);
+        }
+        
+        public static async Task<PackageRemoteInfo> GetPackageInfoFromCache(string packageName, CancellationToken token = default)
+        {
+            var filePath = Application.dataPath + "/../" + SgUpmPackageCachePath + "/" + packageName + ".json";
+            if (!File.Exists(filePath))
+            {
+                return default;
+            }
+            var jsonString = await File.ReadAllTextAsync(filePath, token);
+            return JsonUtility.FromJson<PackageRemoteInfo>(jsonString);
+        }
+        
+        public static async Task<bool> SavePackageInfoToCache(string packageName, PackageRemoteInfo info, CancellationToken token = default)
+        {
+            var filePath = Application.dataPath + "/../" + SgUpmPackageCachePath + "/" + packageName + ".json";
+            var jsonString = JsonUtility.ToJson(info);
+            if (!string.IsNullOrEmpty(jsonString)
+                && jsonString != "[]")
+            {
+                CreateDirectories(filePath);
+                await File.WriteAllTextAsync(filePath, jsonString, token);
+                return true;
+            }
+            return false;
+        }
+        
+        public static string GenerateFileNameFromUrl(string packageInstallUrl)
+        {
+            try
+            {
+                var uri = new Uri(packageInstallUrl);
+                var segments = uri.AbsolutePath.Split('/');
+                var userName = segments.Length > 1 ? segments[1] : string.Empty;
+                var repoName = segments.Length > 2 ? segments[^1] : string.Empty;
+                if (repoName.EndsWith(".git"))
+                {
+                    repoName = repoName.Substring(0, repoName.Length - 4);
+                }
+                return $"{userName}@{repoName}";
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Error processing URL: {ex.Message}");
+                return string.Empty;
+            }
+        }
+        
+        public static void CreateDirectories(string path)
+        {
+            path = Path.HasExtension(path)
+                ? Path.GetDirectoryName(path)
+                : path;
+            
+            if (!string.IsNullOrEmpty(path)
+                && !Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
         }
         
         public void Dispose()

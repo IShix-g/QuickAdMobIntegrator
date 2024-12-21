@@ -1,6 +1,6 @@
 {
   "name": "com.ishix.quickadmobintegrator",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "displayName": "Quick AdMob Integrator",
   "description": "Quick AdMob Integrator simplifies Google AdMob integration in Unity, providing seamless setup for mobile ads.",
   "unity": "2021.3",

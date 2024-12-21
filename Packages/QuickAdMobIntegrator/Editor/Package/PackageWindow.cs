@@ -11,10 +11,19 @@ namespace QuickAdMobIntegrator.Editor
         static readonly string[] s_textureDirectories = { QAIManagerFactory.PackageRootPath };
         
         [MenuItem("Window/Quick AdMob Integrator")]
-        static void ShowWindow()
+        public static void Open() => Open(IsFirstOpen);
+        
+        public static void Open(bool superReload)
         {
             var window = GetWindow<PackageWindow>("Quick AdMob Integrator");
+            window._superReload = superReload;
             window.Show();
+        }
+        
+        public static bool IsFirstOpen
+        {
+            get => SessionState.GetBool("QuickAdMobIntegrator_PackageWindow_IsFirstOpen", true);
+            set => SessionState.SetBool("QuickAdMobIntegrator_PackageWindow_IsFirstOpen", value);
         }
         
         GUIContent _installedIcon;
@@ -31,6 +40,7 @@ namespace QuickAdMobIntegrator.Editor
         PackageInfoDetails[] _mediationPackageInfos;
         CancellationTokenSource _mediationTokenSource;
         bool _isSettingMode;
+        bool _superReload;
         
         void OnEnable()
         {
@@ -45,9 +55,11 @@ namespace QuickAdMobIntegrator.Editor
             _manager = QAIManagerFactory.Create();
             if (_manager.IsCompletedRegistrySetUp)
             {
-                ReloadPackages();
+                ReloadPackages(_superReload);
             }
             _isSettingMode = false;
+            _superReload = false;
+            IsFirstOpen = false;
         }
         
         void OnDisable()
@@ -84,7 +96,7 @@ namespace QuickAdMobIntegrator.Editor
                 if (clickedStartReload)
                 {
                     _isSettingMode = false;
-                    ReloadPackages();
+                    ReloadPackages(true);
                 }
                 else if (clickedOpenSetting)
                 {
@@ -119,7 +131,7 @@ namespace QuickAdMobIntegrator.Editor
                 if (GUILayout.Button("Set up required registries\nfor Scoped Registries", width, height))
                 {
                     _manager.SetUpRegistry();
-                    ReloadPackages();
+                    ReloadPackages(true);
                 }
 
                 GUILayout.FlexibleSpace();
@@ -248,10 +260,10 @@ namespace QuickAdMobIntegrator.Editor
             GUILayout.EndScrollView();
         }
         
-        void ReloadPackages()
+        void ReloadPackages(bool superReload)
         {
             _tokenSource = new CancellationTokenSource();
-            _manager.FetchGoogleAdsPackageInfo(_tokenSource.Token)
+            _manager.FetchGoogleAdsPackageInfo(superReload, _tokenSource.Token)
                 .Handled(task =>
                 {
                     _googleAdsPackageInfo = task.Result;
@@ -267,7 +279,9 @@ namespace QuickAdMobIntegrator.Editor
                 {
                     _mediationPackageInfos[index] = details;
                     Repaint();
-                }, _mediationTokenSource.Token)
+                },
+                superReload,
+                _mediationTokenSource.Token)
                 .Handled(_ =>
                 {
                     _mediationTokenSource?.Dispose();
@@ -419,7 +433,7 @@ namespace QuickAdMobIntegrator.Editor
         void ReloadPackagesNextFrame()
         {
             EditorApplication.delayCall -= ReloadPackagesNextFrame;
-            ReloadPackages();
+            ReloadPackages(false);
         }
         
         string GetButtonText(PackageInfoDetails details)
