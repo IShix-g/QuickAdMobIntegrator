@@ -14,7 +14,7 @@ namespace QuickAdMobIntegrator.Editor
     public sealed class OpenUpmPackageInfoFetcher
     {
         public static readonly Regex PackageRegex = new (@"https:\/\/[^\/]+\/([^\/]+)(?:\/([^\/]+))?", RegexOptions.Compiled);
-        public const string SgUpmPackageCachePath = "Library/PackageCache-QuickAdMobIntegrator";
+        public const string PackageCachePath = "Library/PackageCache-QuickAdMobIntegrator";
         
         public bool IsProcessing{ get; private set; }
         bool _isDisposed;
@@ -131,7 +131,7 @@ namespace QuickAdMobIntegrator.Editor
         
         public static async Task<PackageRemoteInfo> GetPackageInfoFromCache(string packageName, CancellationToken token = default)
         {
-            var filePath = Application.dataPath + "/../" + SgUpmPackageCachePath + "/" + packageName + ".json";
+            var filePath = Application.dataPath + "/../" + PackageCachePath + "/" + packageName + ".json";
             if (!File.Exists(filePath))
             {
                 return default;
@@ -142,7 +142,7 @@ namespace QuickAdMobIntegrator.Editor
         
         public static async Task<bool> SavePackageInfoToCache(string packageName, PackageRemoteInfo info, CancellationToken token = default)
         {
-            var filePath = Application.dataPath + "/../" + SgUpmPackageCachePath + "/" + packageName + ".json";
+            var filePath = Application.dataPath + "/../" + PackageCachePath + "/" + packageName + ".json";
             var jsonString = JsonUtility.ToJson(info);
             if (!string.IsNullOrEmpty(jsonString)
                 && jsonString != "[]")
