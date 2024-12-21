@@ -354,21 +354,34 @@ namespace QuickAdMobIntegrator.Editor
                     }
                     GUI.color = color;
                 }
-                else
+                else if (!string.IsNullOrEmpty(setting.HelpUrl))
                 {
-                    GUILayout.Label(displayName, GUILayout.Width(150));
-                }
-                
-                if (!isSettingMode
-                    && !string.IsNullOrEmpty(setting.HelpUrl))
-                {
-                    var width = GUILayout.Width(22);
-                    var height = GUILayout.Height(EditorGUIUtility.singleLineHeight);
-                    var buttonStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
-                    if (GUILayout.Button(_helpIcon, buttonStyle, width, height))
+                    GUILayout.BeginHorizontal(GUILayout.Width(170));
+                    var buttonStyle = new GUIStyle(GUI.skin.label)
+                    {
+                        fixedWidth = 150,
+                        fixedHeight = EditorGUIUtility.singleLineHeight,
+                    };
+                    var clickedHelp = GUILayout.Button(displayName, buttonStyle);
+                    var iconButtonStyle = new GUIStyle(GUI.skin.label)
+                    {
+                        fixedWidth = 20,
+                        fixedHeight = EditorGUIUtility.singleLineHeight,
+                    };
+                    clickedHelp |= GUILayout.Button(_helpIcon, iconButtonStyle);
+                    GUILayout.EndHorizontal();
+                    
+                    var lastRect = GUILayoutUtility.GetLastRect();
+                    EditorGUIUtility.AddCursorRect(lastRect, MouseCursor.Link);
+                    
+                    if (clickedHelp)
                     {
                         Application.OpenURL(setting.HelpUrl);
                     }
+                }
+                else
+                {
+                    GUILayout.Label(displayName, GUILayout.Width(170));
                 }
                 
                 {
