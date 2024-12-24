@@ -3,7 +3,7 @@
 [README - 日本語版](README_jp.md)
 
 > [!IMPORTANT]
-> DISCLAIMER: Quick AdMob Integrator is an open-source tool and is not an official service by Unity Technologies Inc. It uses the Open UPM registry but is not affiliated with nor provided by Open UPM.
+> **Disclaimer:** Quick AdMob Integrator is an open-source service and is not an official service provided by Unity Technologies Inc. or Google Inc. Additionally, while it uses Open UPM for the registry, it is not a service provided by Open UPM.
 
 # Quick AdMob Integrator
 Simplify the integration of Google AdMob into Unity and seamlessly set up mobile ads.
