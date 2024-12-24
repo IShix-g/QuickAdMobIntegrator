@@ -10,8 +10,6 @@ namespace QuickAdMobIntegrator.Editor
 {
     internal class PackageWindow : EditorWindow
     {
-        static readonly string[] s_textureDirectories = { QAIManagerFactory.PackageRootPath };
-        
         [MenuItem("Window/Quick AdMob Integrator")]
         public static void Open() => Open(IsFirstOpen);
         
@@ -22,10 +20,16 @@ namespace QuickAdMobIntegrator.Editor
             window.Show();
         }
         
+        static readonly string[] s_textureDirectories = { QAIManagerFactory.PackageRootPath };
         public static bool IsFirstOpen
         {
             get => SessionState.GetBool("QuickAdMobIntegrator_PackageWindow_IsFirstOpen", true);
             set => SessionState.SetBool("QuickAdMobIntegrator_PackageWindow_IsFirstOpen", value);
+        }
+        public static bool IsShowSetUpFoldout
+        {
+            get => SessionState.GetBool("QuickAdMobIntegrator_PackageWindow_IsShowSetUpFoldout", true);
+            set => SessionState.SetBool("QuickAdMobIntegrator_PackageWindow_IsShowSetUpFoldout", value);
         }
         
         GUIContent _installedIcon;
@@ -46,7 +50,7 @@ namespace QuickAdMobIntegrator.Editor
         AdMobSettingsValidator _adMobSettingsValidator;
         bool _isSettingMode;
         bool _superReload;
-        bool _showFoldout = true;
+        bool _isShowSetUpFoldout;
 
         void OnEnable()
         {
@@ -69,6 +73,7 @@ namespace QuickAdMobIntegrator.Editor
             _isSettingMode = false;
             _superReload = false;
             IsFirstOpen = false;
+            _isShowSetUpFoldout = IsShowSetUpFoldout;
         }
         
         void OnDisable()
@@ -84,6 +89,7 @@ namespace QuickAdMobIntegrator.Editor
             _tokenSource?.SafeCancelAndDispose();
             _mediationTokenSource?.SafeCancelAndDispose();
             EditorApplication.delayCall -= ReloadPackagesNextFrame;
+            IsShowSetUpFoldout = _isShowSetUpFoldout;
         }
         
         void OnGUI()
@@ -165,10 +171,10 @@ namespace QuickAdMobIntegrator.Editor
                     fontSize = 13,
                     margin = new RectOffset(5, 0 ,0 ,0)
                 };
-                _showFoldout = EditorGUILayout.Foldout(_showFoldout, "Essential Setup Steps", style);
+                _isShowSetUpFoldout = EditorGUILayout.Foldout(_isShowSetUpFoldout, "Essential Setup Steps", style);
             }
 
-            if (_showFoldout)
+            if (_isShowSetUpFoldout)
             {
                 GUILayout.Space(15);
                 DrawChecklistItem(
