@@ -1,13 +1,10 @@
 {
-    "name": "QuickAdMobIntegrator.Editor",
+    "name": "QuickAdMobIntegrator.Admob.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:cbb42e4cfd9484f52972c8f05e1c3252",
-        "GUID:e134aa58f14a4b02b587a8b83939638b"
+        "GUID:cbb42e4cfd9484f52972c8f05e1c3252"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
