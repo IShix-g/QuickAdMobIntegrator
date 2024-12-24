@@ -46,6 +46,7 @@ namespace QuickAdMobIntegrator.Editor
         AdMobSettingsValidator _adMobSettingsValidator;
         bool _isSettingMode;
         bool _superReload;
+        bool _showFoldout = true;
 
         void OnEnable()
         {
@@ -158,41 +159,44 @@ namespace QuickAdMobIntegrator.Editor
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Width(position.width));
             
             {
-                var style = new GUIStyle(GUI.skin.label)
+                GUILayout.Space(10);
+                var style = new GUIStyle(EditorStyles.foldout)
                 {
-                    alignment = TextAnchor.MiddleCenter,
-                    padding = new RectOffset(8, 78, 10, 10),
-                    fixedHeight = 35,
-                    stretchWidth = true,
+                    fontSize = 13,
+                    margin = new RectOffset(5, 0 ,0 ,0)
                 };
-                GUILayout.Label("Essential Setup Steps", style);
+                _showFoldout = EditorGUILayout.Foldout(_showFoldout, "Essential Setup Steps", style);
             }
-            
-            DrawChecklistItem(
-                $"Please install {_googleAdsPackageInfo.Remote.displayName} first.",
-                _googleAdsPackageInfo.IsInstalled,
-                !_manager.IsProcessing && !_googleAdsPackageInfo.IsInstalled,
-                _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
-                () =>
-                {
-                    if (!_googleAdsPackageInfo.IsInstalled)
-                    {
-                        InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
-                    }
-                }
-            );
 
-            GUILayout.Space(5);
+            if (_showFoldout)
+            {
+                GUILayout.Space(15);
+                DrawChecklistItem(
+                    $"Please install {_googleAdsPackageInfo.Remote.displayName} first.",
+                    _googleAdsPackageInfo.IsInstalled,
+                    !_manager.IsProcessing && !_googleAdsPackageInfo.IsInstalled,
+                    _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
+                    () =>
+                    {
+                        if (!_googleAdsPackageInfo.IsInstalled)
+                        {
+                            InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
+                        }
+                    }
+                );
+
+                GUILayout.Space(5);
             
-            DrawChecklistItem(
-                "Set up the Google Mobile Ads App ID", 
-                _adMobSettingsValidator.IsValid,
-                !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
-                _adMobSettingsValidator.IsValid ? "Configured" : "Set Up",
-                () => _adMobSettingsValidator.OpenSettings()
-            );
-            
-            GUILayout.Space(20);
+                DrawChecklistItem(
+                    "Set up the Google Mobile Ads App ID", 
+                    _adMobSettingsValidator.IsValid,
+                    !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
+                    _adMobSettingsValidator.IsValid ? "Configured" : "Set Up",
+                    () => _adMobSettingsValidator.OpenSettings()
+                );
+                
+                GUILayout.Space(20);
+            }
             
             {
                 var boxStyle = new GUIStyle()
@@ -492,7 +496,7 @@ namespace QuickAdMobIntegrator.Editor
         
         void DrawChecklistItem(string label, bool isComplete, bool buttonActive, string buttonName, Action onClick)
         {
-            var style = new GUIStyle() {padding = new RectOffset(8, 8, 0, 3)};
+            var style = new GUIStyle() {padding = new RectOffset(22, 8, 0, 3)};
             GUILayout.BeginHorizontal(style);
             GUILayout.Label(isComplete ? _completedIcon : _notCompletedIcon, GUILayout.Width(15), GUILayout.Height(15));
             GUILayout.Label(label);
