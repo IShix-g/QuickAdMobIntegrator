@@ -3,7 +3,7 @@ using System;
 
 namespace QuickAdMobIntegrator.Admob.Editor
 {
-    public struct ValidationErrorState : IEquatable<ValidationErrorState>
+    internal struct ValidationErrorState : IEquatable<ValidationErrorState>
     {
         public readonly ValidationErrorType Type;
         public readonly string Message;

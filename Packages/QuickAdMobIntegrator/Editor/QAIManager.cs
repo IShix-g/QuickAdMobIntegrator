@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class QAIManager : IDisposable
+    internal sealed class QAIManager : IDisposable
     {
         public PackageInstaller Installer { get; }
         public PackageSettings Settings { get; }

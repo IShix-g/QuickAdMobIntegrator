@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class PackageSettings : ScriptableObject
+    internal sealed class PackageSettings : ScriptableObject
     {
         public string SettingVersion;
         public ManifestRegistry Registry;

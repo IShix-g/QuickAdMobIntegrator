@@ -1,7 +1,7 @@
 
 namespace QuickAdMobIntegrator.Admob.Editor
 {
-    public enum ValidationErrorType
+    internal enum ValidationErrorType
     {
         None,
         NotInstalled,

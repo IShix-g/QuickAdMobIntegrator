@@ -11,7 +11,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class OpenUpmPackageInfoFetcher
+    internal sealed class OpenUpmPackageInfoFetcher
     {
         public static readonly Regex PackageRegex = new (@"https:\/\/[^\/]+\/([^\/]+)(?:\/([^\/]+))?", RegexOptions.Compiled);
         public const string PackageCachePath = "Library/PackageCache-QuickAdMobIntegrator";

@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public static class AssetDatabaseSupport
+    internal static class AssetDatabaseSupport
     {
         public static void CreateDirectories(string path)
         {

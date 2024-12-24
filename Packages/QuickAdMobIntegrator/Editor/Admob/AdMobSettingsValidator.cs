@@ -1,7 +1,7 @@
 
 namespace QuickAdMobIntegrator.Admob.Editor
 {
-    public sealed class AdMobSettingsValidator
+    internal sealed class AdMobSettingsValidator
     {
         public static class Errors
         {

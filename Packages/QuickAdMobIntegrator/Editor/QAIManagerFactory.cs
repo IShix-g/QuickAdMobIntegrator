@@ -1,11 +1,10 @@
 
-
 using System.IO;
 using UnityEditor;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class QAIManagerFactory
+    internal sealed class QAIManagerFactory
     {
         public const string PackageRootPath = "Packages/com.ishix.quickadmobintegrator/";
         public const string DefaultSettingPath = PackageRootPath + "Editor/DefaultSettings.asset";

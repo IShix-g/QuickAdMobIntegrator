@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class ManifestRegistryConfigurator
+    internal sealed class ManifestRegistryConfigurator
     {
         public static class ManifestKeys
         {

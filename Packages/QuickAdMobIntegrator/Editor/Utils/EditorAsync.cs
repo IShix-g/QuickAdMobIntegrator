@@ -6,7 +6,7 @@ using UnityEditor;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class EditorAsync : IDisposable
+    internal sealed class EditorAsync : IDisposable
     {
         public bool IsStarted => _completionSource != null;
 

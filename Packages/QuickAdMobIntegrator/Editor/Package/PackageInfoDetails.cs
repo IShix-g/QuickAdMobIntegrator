@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public sealed class PackageInfoDetails
+    internal sealed class PackageInfoDetails
     {
         public PackageLocalInfo Local { get; private set; }
         public PackageRemoteInfo Remote { get; private set; }

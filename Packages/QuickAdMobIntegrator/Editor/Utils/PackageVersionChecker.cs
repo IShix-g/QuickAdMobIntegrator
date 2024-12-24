@@ -12,7 +12,6 @@ namespace QuickAdMobIntegrator.Editor
     internal sealed class PackageVersionChecker : IDisposable
     {
         public const string PackageJsonFileName = "package.json";
-        public const string GitHubRawUrl = "https://raw.githubusercontent.com";
         
         public readonly string GitInstallUrl;
         public readonly string BranchName;
@@ -102,9 +101,12 @@ namespace QuickAdMobIntegrator.Editor
             }
             var query = uri.Query;
             var path = ExtractPathFromQuery(query);
-            var resultUrl = packageInstallUrl.Contains("github.com") ? GitHubRawUrl + pathWithoutFileName : uri.GetLeftPart(UriPartial.Authority) + pathWithoutFileName;
-            var raw = packageInstallUrl.Contains("github.com") ? $"refs/heads/{branch}" : $"raw/{branch}";
-            return $"{resultUrl}/{raw}/{path}";
+            var resultUrl = uri.GetLeftPart(UriPartial.Authority) + pathWithoutFileName;
+            if (string.IsNullOrEmpty(branch))
+            {
+                branch = "HEAD";
+            }
+            return $"{resultUrl}/raw/{branch}/{path}";
         }
 
         static string ExtractPathFromQuery(string query)
@@ -144,7 +146,7 @@ namespace QuickAdMobIntegrator.Editor
                         
                 if (isOpen)
                 {
-                    _packageInstaller.Install(GitInstallUrl, _tokenSource.Token).Handled();
+                    _packageInstaller.Install(new []{ GitInstallUrl }, _tokenSource.Token).Handled();
                 }
             }
             else

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    public class PackageWindow : EditorWindow
+    internal class PackageWindow : EditorWindow
     {
         static readonly string[] s_textureDirectories = { QAIManagerFactory.PackageRootPath };
         
