@@ -1,6 +1,8 @@
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
+using QuickAdMobIntegrator.Admob.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,6 +34,8 @@ namespace QuickAdMobIntegrator.Editor
         GUIContent _settingIcon;
         GUIContent _backIcon;
         GUIContent _helpIcon;
+        GUIContent _completedIcon;
+        GUIContent _notCompletedIcon;
         Texture2D _logo;
         Vector2 _scrollPos;
         QAIManager _manager;
@@ -39,9 +43,10 @@ namespace QuickAdMobIntegrator.Editor
         CancellationTokenSource _tokenSource;
         PackageInfoDetails[] _mediationPackageInfos;
         CancellationTokenSource _mediationTokenSource;
+        AdMobSettingsValidator _adMobSettingsValidator;
         bool _isSettingMode;
         bool _superReload;
-        
+
         void OnEnable()
         {
             _installedIcon = EditorGUIUtility.IconContent("Progress");
@@ -50,8 +55,11 @@ namespace QuickAdMobIntegrator.Editor
             _settingIcon = EditorGUIUtility.IconContent("Settings");
             _backIcon = EditorGUIUtility.IconContent("back");
             _helpIcon = EditorGUIUtility.IconContent("_Help");
+            _completedIcon = EditorGUIUtility.IconContent("winbtn_mac_max");
+            _notCompletedIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
             _logo = GetLogo();
             
+            _adMobSettingsValidator = new AdMobSettingsValidator();
             _manager = QAIManagerFactory.Create();
             if (_manager.IsCompletedRegistrySetUp)
             {
@@ -64,6 +72,7 @@ namespace QuickAdMobIntegrator.Editor
         
         void OnDisable()
         {
+            _manager.Dispose();
             _installedIcon = default;
             _updateIcon = default;
             _refreshIcon = default;
@@ -127,7 +136,6 @@ namespace QuickAdMobIntegrator.Editor
                 
                 var width = GUILayout.MaxWidth(250);
                 var height = GUILayout.Height(50);
-
                 if (GUILayout.Button("Set up required registries\nfor Scoped Registries", width, height))
                 {
                     _manager.SetUpRegistry();
@@ -150,6 +158,43 @@ namespace QuickAdMobIntegrator.Editor
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Width(position.width));
             
             {
+                var style = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    padding = new RectOffset(8, 78, 10, 10),
+                    fixedHeight = 35,
+                    stretchWidth = true,
+                };
+                GUILayout.Label("Essential Setup Steps", style);
+            }
+            
+            DrawChecklistItem(
+                $"Please install {_googleAdsPackageInfo.Remote.displayName} first.",
+                _googleAdsPackageInfo.IsInstalled,
+                !_manager.IsProcessing && !_googleAdsPackageInfo.IsInstalled,
+                _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
+                () =>
+                {
+                    if (!_googleAdsPackageInfo.IsInstalled)
+                    {
+                        InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
+                    }
+                }
+            );
+
+            GUILayout.Space(5);
+            
+            DrawChecklistItem(
+                "Set up the Google Mobile Ads App ID", 
+                _adMobSettingsValidator.IsValid,
+                !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
+                _adMobSettingsValidator.IsValid ? "Configured" : "Set Up",
+                () => _adMobSettingsValidator.OpenSettings()
+            );
+            
+            GUILayout.Space(20);
+            
+            {
                 var boxStyle = new GUIStyle()
                 {
                     padding = new RectOffset(8, _isSettingMode ? 78 : 8, 0, 0),
@@ -157,14 +202,16 @@ namespace QuickAdMobIntegrator.Editor
                 var textStyle = new GUIStyle(GUI.skin.label)
                 {
                     alignment = TextAnchor.MiddleCenter,
+                    fixedHeight = 30,
+                    wordWrap = true,
                 };
                 GUILayout.BeginHorizontal(boxStyle);
                 
-                GUILayout.Label("SDK", textStyle, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                GUILayout.Label("SDK", textStyle);
                 
                 if (!_isSettingMode)
                 {
-                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing);
+                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_googleAdsPackageInfo.IsInstalled);
                     if (GUILayout.Button("Install All", GUILayout.Width(70)))
                     {
                         var userAgreed = EditorUtility.DisplayDialog(
@@ -192,12 +239,6 @@ namespace QuickAdMobIntegrator.Editor
                     EditorGUI.EndDisabledGroup();
                 }
                 GUILayout.EndHorizontal();
-            }
-            
-            if(!_googleAdsPackageInfo.IsInstalled)
-            {
-                EditorGUILayout.HelpBox("Please install `Google Mobile Ads` first.", MessageType.Warning);
-                GUILayout.Space(10);
             }
             
             DrawPackage(_googleAdsPackageInfo, isSettingMode:_isSettingMode, isActiveButton:true);
@@ -262,6 +303,8 @@ namespace QuickAdMobIntegrator.Editor
         
         void ReloadPackages(bool superReload)
         {
+            _adMobSettingsValidator.Validate();
+            
             _tokenSource = new CancellationTokenSource();
             _manager.FetchGoogleAdsPackageInfo(superReload, _tokenSource.Token)
                 .Handled(task =>
@@ -414,16 +457,7 @@ namespace QuickAdMobIntegrator.Editor
                             && !details.IsFixedVersion
                             || !details.IsInstalled)
                         {
-                            _tokenSource?.SafeCancelAndDispose();
-                            _tokenSource = new CancellationTokenSource();
-
-                            _manager.Installer.Install(details.PackageInstallUrl, _tokenSource.Token)
-                                .Handled(_ =>
-                                {
-                                    _tokenSource?.Dispose();
-                                    _tokenSource = default;
-                                    EditorApplication.delayCall += ReloadPackagesNextFrame;
-                                });
+                            InstallPackage(details.PackageInstallUrl);
                         }
                         else if(details.IsInstalled)
                         {
@@ -441,6 +475,36 @@ namespace QuickAdMobIntegrator.Editor
                     EditorGUI.EndDisabledGroup();
                 }
                 GUILayout.EndHorizontal();
+        }
+
+        void InstallPackage(string packageInstallUrl)
+        {
+            _tokenSource?.SafeCancelAndDispose();
+            _tokenSource = new CancellationTokenSource();
+            _manager.Installer.Install(packageInstallUrl, _tokenSource.Token)
+                .Handled(_ =>
+                {
+                    _tokenSource?.Dispose();
+                    _tokenSource = default;
+                    EditorApplication.delayCall += ReloadPackagesNextFrame;
+                });
+        }
+        
+        void DrawChecklistItem(string label, bool isComplete, bool buttonActive, string buttonName, Action onClick)
+        {
+            var style = new GUIStyle() {padding = new RectOffset(8, 8, 0, 3)};
+            GUILayout.BeginHorizontal(style);
+            GUILayout.Label(isComplete ? _completedIcon : _notCompletedIcon, GUILayout.Width(15), GUILayout.Height(15));
+            GUILayout.Label(label);
+
+            EditorGUI.BeginDisabledGroup(!buttonActive);
+            if (GUILayout.Button(buttonName, GUILayout.Width(75)))
+            {
+                onClick?.Invoke();
+            }
+            EditorGUI.EndDisabledGroup();
+
+            GUILayout.EndHorizontal();
         }
         
         void ReloadPackagesNextFrame()
