@@ -90,7 +90,7 @@ URL: `https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdM
 
 ## プラグインの仕組み
 
-このプラグインは、`Open UPM`をScoped Registriesに設定して利用しています。
+このプラグインは、[Open UPM](https://github.com/openupm/openupm) をScoped Registriesに設定して利用しています。
 
 `Unity Editor: Project Settings > Package Manager > Scoped Registries`
 

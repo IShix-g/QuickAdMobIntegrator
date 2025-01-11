@@ -95,7 +95,7 @@ Click the `Install All` button to install all displayed SDKs and mediation packa
 
 ## How the Plugin Works
 
-This plugin operates by using `Open UPM` as a Scoped Registry.
+This plugin operates by using [Open UPM](https://github.com/openupm/openupm) as a Scoped Registry.
 
 You can check and manage it here:  
 `Unity Editor: Project Settings > Package Manager > Scoped Registries`
