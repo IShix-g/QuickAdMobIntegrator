@@ -9,7 +9,9 @@ namespace QuickAdMobIntegrator.Editor
     {
         public PackageInstaller Installer { get; }
         public PackageSettings Settings { get; }
-        public bool IsProcessing => Installer.IsProcessing || _infoFetcher.IsProcessing || _isProcessingMediation;
+        public bool IsProcessing => Installer.IsProcessing
+                                    || _infoFetcher.IsProcessing
+                                    || _isProcessingMediation;
         public bool IsCompletedRegistrySetUp { get; private set; }
 
         readonly OpenUpmPackageInfoFetcher _infoFetcher;

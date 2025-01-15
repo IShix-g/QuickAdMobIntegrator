@@ -43,7 +43,7 @@ namespace QuickAdMobIntegrator.Admob.Editor
             }
             catch
             {
-                // If exception occurs, this code is likely to have a problem, so set to true.
+                // Ignore if validation fails
                 SetValidationState(ValidationErrorState.Empty);
                 return true;
             }

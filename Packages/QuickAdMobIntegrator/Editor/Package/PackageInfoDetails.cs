@@ -102,8 +102,7 @@ namespace QuickAdMobIntegrator.Editor
             return local.PreReleaseNumber.CompareTo(server.PreReleaseNumber);
         }
         
-        public string GetVersionParam()
-            => GetVersionParam(PackageInstallUrl);
+        public string GetVersionParam() => GetVersionParam(PackageInstallUrl);
         
         public static string GetVersionParam(string packageInstallUrl)
         {
