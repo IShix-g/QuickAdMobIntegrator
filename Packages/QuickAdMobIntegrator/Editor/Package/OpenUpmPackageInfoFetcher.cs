@@ -98,13 +98,14 @@ namespace QuickAdMobIntegrator.Editor
             IsProcessing = true;
             try
             {
-                using var op = UnityWebRequest.Get(openUpmPackageInfoUrl);
-                await op.SendWebRequest();
-                if (op.isDone)
+                using var request = UnityWebRequest.Get(openUpmPackageInfoUrl);
+                request.timeout = 30;
+                await request.SendWebRequest();
+                if (request.isDone)
                 {
-                    return JsonConvert.DeserializeObject<PackageRemoteInfo>(op.downloadHandler.text);
+                    return JsonConvert.DeserializeObject<PackageRemoteInfo>(request.downloadHandler.text);
                 }
-                throw new InvalidOperationException(op.error);
+                throw new InvalidOperationException(request.error);
             }
             finally
             {
