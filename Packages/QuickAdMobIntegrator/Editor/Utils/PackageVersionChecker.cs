@@ -58,6 +58,7 @@ namespace QuickAdMobIntegrator.Editor
             _isNowLoading = true;
             var gitPackageJsonUrl = ToRawPackageJsonURL(GitInstallUrl, BranchName);
             var request = UnityWebRequest.Get(gitPackageJsonUrl);
+            request.timeout = 30;
             
             try
             {
