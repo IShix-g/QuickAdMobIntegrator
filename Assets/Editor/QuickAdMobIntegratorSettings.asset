@@ -31,11 +31,11 @@ MonoBehaviour:
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.metaaudiencenetwork
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/meta
-    _fixedVersion: 3.12.1
+    _fixedVersion: 3.17.0
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.ironsource
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/ironsource
-    _fixedVersion: 
+    _fixedVersion: 3.8.1
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.pangle
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/pangle
@@ -80,14 +80,4 @@ MonoBehaviour:
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.line
     _helpUrl: https://developers.google.com/admob/unity/mediation/line
     _fixedVersion: 
-  Notes: 'Test
-
-    Test
-
-    Test
-
-    Test
-
-    Test
-
-    Test'
+  Notes: 
