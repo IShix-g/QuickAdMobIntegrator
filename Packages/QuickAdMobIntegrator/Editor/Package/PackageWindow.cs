@@ -43,6 +43,7 @@ namespace QuickAdMobIntegrator.Editor
         GUIContent _notCompletedIcon;
         Texture2D _logo;
         Vector2 _scrollPos;
+        Vector2 _textAreaScrollPos;
         QAIManager _manager;
         PackageInfoDetails _googleAdsPackageInfo;
         CancellationTokenSource _tokenSource;
@@ -348,7 +349,11 @@ namespace QuickAdMobIntegrator.Editor
                 
                 EditorGUI.BeginChangeCheck();
                 
-                _manager.Settings.Notes = GUILayout.TextArea(_manager.Settings.Notes, textAreaStyle, GUILayout.ExpandWidth(true), GUILayout.MinHeight(100));
+                _textAreaScrollPos = EditorGUILayout.BeginScrollView(_textAreaScrollPos,GUILayout.Height(110));
+                
+                _manager.Settings.Notes = GUILayout.TextArea(_manager.Settings.Notes, textAreaStyle, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                
+                EditorGUILayout.EndScrollView();
                 
                 if (EditorGUI.EndChangeCheck())
                 {
