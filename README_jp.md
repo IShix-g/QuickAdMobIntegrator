@@ -55,13 +55,6 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 
 <img src="Docs/qai_setting_update.jpg" width="550"/>
 
-### {1.4.0} メモ機能を追加
-
-簡単なメモ機能を追加しました。  
-例えば、パッケージのバージョンを指定した場合、その理由などを書いておくと後で見返す時に便利です。
-
-<img src="Docs/qai_setting_notes.jpg" width="550"/>
-
 ### 設定の完了
 
 戻るボタンをクリックして設定を完了します。
@@ -85,6 +78,13 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 `Install All`ボタンをクリックする事で表示されているすべてのSDKとメディエーションをインストールします。
 
 <img src="Docs/qai_install_all.jpg" width="550"/>
+
+### {1.4.0} メモ機能を追加
+
+簡単なメモ機能を追加しました。  
+例えば、パッケージのバージョンを指定した場合、その理由などを書いておくと後で見返す時に便利です。
+
+<img src="Docs/qai_setting_notes.jpg" width="550"/>
 
 ## 各ボタンの説明
 

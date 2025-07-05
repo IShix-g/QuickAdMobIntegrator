@@ -59,14 +59,6 @@ packages won't update automatically - you'll need to click the Update button.
 
 <img src="Docs/qai_setting_update.jpg" width="550"/>
 
-### {1.4.0} Added Notes Feature
-
-A simple notes feature has been added.
-For example, when specifying a package version, you can write down the reason for choosing that version, which can be
-helpful when reviewing later.
-
-<img src="Docs/qai_setting_notes.jpg" width="550"/>
-
 ### Complete Setup
 
 Click the back button to complete the initial setup.
@@ -90,6 +82,14 @@ Please delete the following items:
 Click the `Install All` button to install all displayed SDKs and mediation packages.
 
 <img src="Docs/qai_install_all.jpg" width="550"/>
+
+### {1.4.0} Added Notes Feature
+
+A simple notes feature has been added.
+For example, when specifying a package version, you can write down the reason for choosing that version, which can be
+helpful when reviewing later.
+
+<img src="Docs/qai_setting_notes.jpg" width="550"/>
 
 ## Explanation of Buttons
 
