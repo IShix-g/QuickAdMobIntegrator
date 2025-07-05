@@ -11,6 +11,11 @@ namespace QuickAdMobIntegrator.Editor
 {
     internal class PackageWindow : EditorWindow
     {
+        const string _gitURL = "https://github.com/IShix-g/QuickAdMobIntegrator";
+        const string _gitInstallUrl = _gitURL + ".git?path=Packages/QuickAdMobIntegrator";
+        const string _gitBranchName = "main";
+        const string _packageName = "com.ishix.quickadmobintegrator";
+        
         [MenuItem("Window/Quick AdMob Integrator")]
         public static void Open() => Open(IsFirstOpen);
         
@@ -50,6 +55,7 @@ namespace QuickAdMobIntegrator.Editor
         PackageInfoDetails[] _mediationPackageInfos;
         CancellationTokenSource _mediationTokenSource;
         AdMobSettingsValidator _adMobSettingsValidator;
+        PackageVersionChecker _versionChecker = new (_gitInstallUrl, _gitBranchName, _packageName);
         bool _isSettingMode;
         bool _superReload;
         bool _isShowSetUpFoldout;
@@ -74,6 +80,7 @@ namespace QuickAdMobIntegrator.Editor
             _isShowSetUpFoldout = IsShowSetUpFoldout;
             
             EditorApplication.delayCall += Initialize;
+            _versionChecker.Fetch().Handled();
         }
 
         void Initialize()
@@ -97,8 +104,8 @@ namespace QuickAdMobIntegrator.Editor
             _logo = default;
             _tokenSource?.SafeCancelAndDispose();
             _mediationTokenSource?.SafeCancelAndDispose();
-            EditorApplication.delayCall -= ReloadPackagesNextFrame;
             IsShowSetUpFoldout = _isShowSetUpFoldout;
+            _versionChecker?.Dispose();
         }
         
         void OnGUI()
@@ -118,6 +125,8 @@ namespace QuickAdMobIntegrator.Editor
                 var clickedOpenSetting = GUILayout.Button(settingIcon, width, height);
                 var clickedStartReload = GUILayout.Button(_refreshIcon, width, height);
                 var clickedOpenManager = GUILayout.Button("Package Manager", height);
+                var pluginVersion = _versionChecker.IsLoaded ? _versionChecker.LocalInfo.VersionString : "---";
+                var clickedVersion = GUILayout.Button(pluginVersion, height);
             
                 GUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
@@ -140,6 +149,12 @@ namespace QuickAdMobIntegrator.Editor
                 {
                     _isSettingMode = false;
                     PackageInstaller.OpenPackageManager();
+                }
+                else if (_versionChecker.IsLoaded
+                         && clickedVersion)
+                {
+                    _tokenSource = new CancellationTokenSource();
+                    _versionChecker.CheckVersion(_tokenSource.Token);
                 }
             }
             
