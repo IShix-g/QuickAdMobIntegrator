@@ -153,9 +153,10 @@ namespace QuickAdMobIntegrator.Editor
             else
             {
                 EditorUtility.DisplayDialog(
-                    "You have the latest version.",
-                    "Editor: " + localVersion + " | GitHub: " + serverVersion + "\nThe current version is the latest release.",
-                    "Close");
+                    localVersion + "\nYou're up to date.",
+                    "You have the latest version installed.",
+                    "OK"
+                );
             }
         }
         
