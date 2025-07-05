@@ -7,11 +7,16 @@ namespace QuickAdMobIntegrator.Editor
 {
     internal sealed class PackageSettings : ScriptableObject
     {
-        public string SettingVersion;
+        public int SettingVersion;
         public ManifestRegistry Registry;
         public RequiredScope AdmobScope;
         public Scope[] MediationScopes;
-
+        
+        void OnDisable()
+        {
+            Save();
+        }
+        
         public IScope GetByName(string name)
         {
             if (AdmobScope.OpenUpmInfoUrl.Contains(name))
@@ -31,28 +36,60 @@ namespace QuickAdMobIntegrator.Editor
         public void Save()
         {
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssetIfDirty(this);
+        }
+        
+        public void Update130()
+        {
+            {
+                if (AdmobScope is IUpdate130Target target)
+                {
+                    target.Update();
+                }
+            }
+            foreach (var scope in MediationScopes)
+            {
+                if (scope is IUpdate130Target target)
+                {
+                    target.Update();
+                }
+            }
         }
         
         [Serializable]
-        public class RequiredScope : IScope
+        public class RequiredScope : IScope, IUpdate130Target
         {
             [SerializeField] string _openUpmInfoUrl;
             [SerializeField] string _helpUrl;
+            [SerializeField] string _fixedVersion;
 
             public bool IsEnabled => true;
             public bool IsRequired => true;
             public string OpenUpmInfoUrl => _openUpmInfoUrl;
-
             public string HelpUrl => _helpUrl;
+            public string FixedVersion
+            {
+                get => _fixedVersion;
+                set => _fixedVersion = value;
+            }
+
+            void IUpdate130Target.Update()
+            {
+                var target = "/latest";
+                if (_openUpmInfoUrl.EndsWith(target))
+                {
+                    _openUpmInfoUrl = _openUpmInfoUrl.Substring(0, _openUpmInfoUrl.Length - target.Length);
+                }
+            }
         }
         
         [Serializable]
-        public class Scope : IScope
+        public class Scope : IScope, IUpdate130Target
         {
             [SerializeField] bool _isEnabled = true;
             [SerializeField] string _openUpmInfoUrl;
             [SerializeField] string _helpUrl;
+            [SerializeField] string _fixedVersion;
 
             public bool IsRequired => false;
             public bool IsEnabled
@@ -61,8 +98,21 @@ namespace QuickAdMobIntegrator.Editor
                 set => _isEnabled = value;
             }
             public string OpenUpmInfoUrl => _openUpmInfoUrl;
-
             public string HelpUrl => _helpUrl;
+            public string FixedVersion
+            {
+                get => _fixedVersion;
+                set => _fixedVersion = value;
+            }
+            
+            void IUpdate130Target.Update()
+            {
+                var target = "/latest";
+                if (_openUpmInfoUrl.EndsWith(target))
+                {
+                    _openUpmInfoUrl = _openUpmInfoUrl.Substring(0, _openUpmInfoUrl.Length - target.Length);
+                }
+            }
         }
         
         public interface IScope
@@ -71,6 +121,9 @@ namespace QuickAdMobIntegrator.Editor
             public bool IsEnabled { get; }
             public string OpenUpmInfoUrl { get; }
             public string HelpUrl { get; }
+            public string FixedVersion { get; set; }
+            
+            public bool HasFixedVersion => !string.IsNullOrEmpty(FixedVersion);
         }
     }
 }
