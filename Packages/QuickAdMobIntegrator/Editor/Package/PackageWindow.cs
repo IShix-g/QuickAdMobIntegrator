@@ -327,6 +327,36 @@ namespace QuickAdMobIntegrator.Editor
                 }
                 EditorGUI.EndDisabledGroup();
             }
+            else
+            {
+                var boxStyle = new GUIStyle()
+                {
+                    padding = new RectOffset(10, 10, 0, 0),
+                };
+                var labelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    padding = new RectOffset(8, 78, 10, 10)
+                };
+                var textAreaStyle = new GUIStyle(GUI.skin.textArea)
+                {
+                    padding = new RectOffset(5, 5, 5, 5)
+                };
+                GUILayout.BeginVertical(boxStyle);
+
+                GUILayout.Label("Notes", labelStyle, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                
+                EditorGUI.BeginChangeCheck();
+                
+                _manager.Settings.Notes = GUILayout.TextArea(_manager.Settings.Notes, textAreaStyle, GUILayout.ExpandWidth(true), GUILayout.MinHeight(100));
+                
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _manager.Settings.Save();
+                }
+                
+                GUILayout.EndVertical();
+            }
             
             GUILayout.EndScrollView();
         }
