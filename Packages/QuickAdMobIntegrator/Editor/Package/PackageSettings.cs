@@ -11,6 +11,7 @@ namespace QuickAdMobIntegrator.Editor
         public ManifestRegistry Registry;
         public RequiredScope AdmobScope;
         public Scope[] MediationScopes;
+        [TextArea] public string Notes;
         
         void OnDisable()
         {
