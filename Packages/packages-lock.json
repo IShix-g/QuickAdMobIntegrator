@@ -1,12 +1,21 @@
 {
   "dependencies": {
     "com.google.ads.mobile": {
-      "version": "9.5.0",
+      "version": "10.0.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.google.external-dependency-manager": "1.2.183",
         "com.unity.modules.androidjni": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
+    },
+    "com.google.ads.mobile.mediation.unity": {
+      "version": "3.14.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.google.ads.mobile": "10.0.0"
       },
       "url": "https://package.openupm.com"
     },

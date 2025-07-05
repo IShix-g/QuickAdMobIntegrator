@@ -47,7 +47,7 @@ namespace Test
             var manager = QAIManagerFactory.Create();
             manager.SetUpRegistry();
             manager.FetchGoogleAdsPackageInfo(true)
-                .Handled(task => Debug.Log(task.Result.Remote.name + " " + task.Result.Remote.version));
+                .Handled(task => Debug.Log(task.Result.Remote.Name + " " + task.Result.Remote.LatestVersion));
         }
 
         [MenuItem("Tests/Admob Setting Check")]
