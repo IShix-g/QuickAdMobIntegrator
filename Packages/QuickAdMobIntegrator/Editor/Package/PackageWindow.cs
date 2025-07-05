@@ -55,7 +55,7 @@ namespace QuickAdMobIntegrator.Editor
         PackageInfoDetails[] _mediationPackageInfos;
         CancellationTokenSource _mediationTokenSource;
         AdMobSettingsValidator _adMobSettingsValidator;
-        PackageVersionChecker _versionChecker = new (_gitInstallUrl, _gitBranchName, _packageName);
+        readonly PackageVersionChecker _versionChecker = new (_gitInstallUrl, _gitBranchName, _packageName);
         bool _isSettingMode;
         bool _superReload;
         bool _isShowSetUpFoldout;
@@ -94,7 +94,7 @@ namespace QuickAdMobIntegrator.Editor
 
         void OnDisable()
         {
-            _manager.Dispose();
+            _manager?.Dispose();
             _installedIcon = default;
             _updateIcon = default;
             _refreshIcon = default;
@@ -126,7 +126,7 @@ namespace QuickAdMobIntegrator.Editor
                 var clickedStartReload = GUILayout.Button(_refreshIcon, width, height);
                 var clickedOpenManager = GUILayout.Button("Package Manager", height);
                 var pluginVersion = _versionChecker.IsLoaded ? _versionChecker.LocalInfo.VersionString : "---";
-                var clickedVersion = GUILayout.Button(pluginVersion, height);
+                var clickedVersion = GUILayout.Button(pluginVersion, GUILayout.Width(100), height);
             
                 GUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
@@ -578,7 +578,7 @@ namespace QuickAdMobIntegrator.Editor
                     }
 
                     var buttonText = GetButtonText(details);
-                    EditorGUI.BeginDisabledGroup(!isActiveButton || !details.IsLoaded || _manager.IsProcessing);
+                    EditorGUI.BeginDisabledGroup(!isActiveButton || !details.IsLoaded || _manager.IsProcessing || _versionChecker.IsProcessing);
                     if (GUILayout.Button(buttonText, GUILayout.Width(70)))
                     {
                         if (details.HasUpdate
