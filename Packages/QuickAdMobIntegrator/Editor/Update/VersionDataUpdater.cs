@@ -7,7 +7,8 @@ namespace QuickAdMobIntegrator.Editor
         {
             using var manager = QAIManagerFactory.Create();
             var settings = manager.Settings;
-            if (manager.Settings.SettingVersion >= 2)
+            if (settings == null
+                || manager.Settings.SettingVersion >= 2)
             {
                 return;
             }
