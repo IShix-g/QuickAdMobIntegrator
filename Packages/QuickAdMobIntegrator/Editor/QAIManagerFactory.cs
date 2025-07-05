@@ -11,13 +11,13 @@ namespace QuickAdMobIntegrator.Editor
         public const string SettingPath = "Assets/Editor/QuickAdMobIntegratorSettings.asset";
 
         static PackageSettings s_settings;
-        
+
         public static QAIManager Create()
         {
             var installer = new PackageInstaller();
-            var ads = new OpenUpmPackageInfoFetcher(installer);
+            var fetcher = new OpenUpmPackageInfoFetcher(installer);
             var settings = GetOrCreateSettings();
-            return new QAIManager(installer, ads, settings);
+            return new QAIManager(installer, fetcher, settings);
         }
 
         static PackageSettings GetOrCreateSettings()

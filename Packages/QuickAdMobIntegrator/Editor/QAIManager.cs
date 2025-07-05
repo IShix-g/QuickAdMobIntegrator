@@ -10,21 +10,21 @@ namespace QuickAdMobIntegrator.Editor
         public PackageInstaller Installer { get; }
         public PackageSettings Settings { get; }
         public bool IsProcessing => Installer.IsProcessing
-                                    || _infoFetcher.IsProcessing
+                                    || _fetcher.IsProcessing
                                     || _isProcessingMediation;
         public bool IsCompletedRegistrySetUp { get; private set; }
 
-        readonly OpenUpmPackageInfoFetcher _infoFetcher;
+        readonly OpenUpmPackageInfoFetcher _fetcher;
         bool _isDisposed;
         bool _isProcessingMediation;
 
         public QAIManager(
             PackageInstaller installer,
-            OpenUpmPackageInfoFetcher infoFetcher,
+            OpenUpmPackageInfoFetcher fetcher,
             PackageSettings settings)
         {
             Installer = installer;
-            _infoFetcher = infoFetcher;
+            _fetcher = fetcher;
             Settings = settings;
             IsCompletedRegistrySetUp = ManifestRegistryConfigurator.Contains(settings.Registry);
         }
@@ -41,9 +41,10 @@ namespace QuickAdMobIntegrator.Editor
 
         public async Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(bool superReload, CancellationToken token = default)
         {
-            var details = await FetchPackageInfo(Settings.AdmobScope.OpenUpmInfoUrl, superReload, token);
-            var displayName = details.Remote.displayName;
-            details.Remote.displayName = displayName.Replace("for Unity", "");
+            var url = Settings.AdmobScope.OpenUpmInfoUrl;
+            var details = await _fetcher.FetchPackageInfo(url, superReload, token);
+            var displayName = details.Remote.DisplayName;
+            details.Remote.DisplayName = displayName.Replace("for Unity", "");
             return details;
         }
 
@@ -61,12 +62,12 @@ namespace QuickAdMobIntegrator.Editor
                     }
 
                     var index = i;
-                    tasks[i] = FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, token);
+                    tasks[i] = _fetcher.FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, token);
                     tasks[i].Handled(task =>
                     {
                         var details = task.Result;
-                        var displayName = details.Remote.displayName;
-                        details.Remote.displayName = displayName.Replace("Google Mobile Ads", "").Replace("Mediation", "");
+                        var displayName = details.Remote.DisplayName;
+                        details.Remote.DisplayName = displayName.Replace("Google Mobile Ads", "").Replace("Mediation", "");
                         onLoadedAction?.Invoke(index, task.Result);
                     });
                 }
@@ -77,10 +78,7 @@ namespace QuickAdMobIntegrator.Editor
                 _isProcessingMediation = false;
             }
         }
-        
-        public Task<PackageInfoDetails> FetchPackageInfo(string openUpmInfoUrl, bool superReload, CancellationToken token = default)
-            => _infoFetcher.FetchPackageInfo(openUpmInfoUrl, superReload, token);
-        
+
         public void Dispose()
         {
             if (_isDisposed)
@@ -89,7 +87,7 @@ namespace QuickAdMobIntegrator.Editor
             }
             _isDisposed = true;
             Installer?.Dispose();
-            _infoFetcher?.Dispose();
+            _fetcher?.Dispose();
         }
     }
 }

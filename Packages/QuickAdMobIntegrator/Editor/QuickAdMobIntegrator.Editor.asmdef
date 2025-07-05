@@ -2,6 +2,7 @@
     "name": "QuickAdMobIntegrator.Editor",
     "rootNamespace": "",
     "references": [
+        "GUID:4678e0ef39e1d45fbba0f6afb727bd74",
         "GUID:e134aa58f14a4b02b587a8b83939638b"
     ],
     "includePlatforms": [

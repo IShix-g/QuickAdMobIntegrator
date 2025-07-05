@@ -1,5 +1,6 @@
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
 using QuickAdMobIntegrator.Admob.Editor;
@@ -65,17 +66,23 @@ namespace QuickAdMobIntegrator.Editor
             _logo = GetLogo();
             
             _adMobSettingsValidator = new AdMobSettingsValidator();
+            _isSettingMode = false;
+            _superReload = false;
+            IsFirstOpen = false;
+            _isShowSetUpFoldout = IsShowSetUpFoldout;
+            
+            EditorApplication.delayCall += Initialize;
+        }
+
+        void Initialize()
+        {
             _manager = QAIManagerFactory.Create();
             if (_manager.IsCompletedRegistrySetUp)
             {
                 ReloadPackages(_superReload);
             }
-            _isSettingMode = false;
-            _superReload = false;
-            IsFirstOpen = false;
-            _isShowSetUpFoldout = IsShowSetUpFoldout;
         }
-        
+
         void OnDisable()
         {
             _manager.Dispose();
@@ -94,6 +101,10 @@ namespace QuickAdMobIntegrator.Editor
         
         void OnGUI()
         {
+            if (_manager == null)
+            {
+                return;
+            }
             if (_manager.IsCompletedRegistrySetUp)
             {
                 EditorGUI.BeginDisabledGroup(_manager.IsProcessing);
@@ -116,6 +127,10 @@ namespace QuickAdMobIntegrator.Editor
                 }
                 else if (clickedOpenSetting)
                 {
+                    if (_isSettingMode)
+                    {
+                        ReloadPackages(false);
+                    }
                     _isSettingMode = !_isSettingMode;
                 }
                 else if (clickedOpenManager)
@@ -178,7 +193,7 @@ namespace QuickAdMobIntegrator.Editor
             {
                 GUILayout.Space(15);
                 DrawChecklistItem(
-                    $"Please install {_googleAdsPackageInfo.Remote.displayName} first.",
+                    $"Please install {_googleAdsPackageInfo.Remote.DisplayName} first.",
                     _googleAdsPackageInfo.IsInstalled,
                     !_manager.IsProcessing && !_googleAdsPackageInfo.IsInstalled,
                     _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
@@ -202,6 +217,11 @@ namespace QuickAdMobIntegrator.Editor
                 );
                 
                 GUILayout.Space(20);
+            }
+
+            if (_isSettingMode)
+            {
+                EditorGUILayout.HelpBox("Always latest - Will always check for and notify about new Packages.", MessageType.Info);
             }
             
             {
@@ -280,7 +300,7 @@ namespace QuickAdMobIntegrator.Editor
             if (_isSettingMode)
             {
                 EditorGUI.BeginDisabledGroup(_manager.IsProcessing);
-                GUILayout.Space(10);
+                GUILayout.Space(20);
                 if (GUILayout.Button("Remove all installed packages.", GUILayout.Height(EditorGUIUtility.singleLineHeight + 4)))
                 {
                     var userAgreed = EditorUtility.DisplayDialog(
@@ -344,7 +364,7 @@ namespace QuickAdMobIntegrator.Editor
         
         void DrawPackage(PackageInfoDetails details, bool isSettingMode, bool isActiveButton)
         {
-                var setting = _manager.Settings.GetByName(details.Remote.name);
+                var setting = _manager.Settings.GetByName(details.Remote.Name);
                 if (!setting.IsRequired
                     && !isSettingMode
                     && !setting.IsEnabled)
@@ -352,33 +372,19 @@ namespace QuickAdMobIntegrator.Editor
                     return;
                 }
 
+                if (setting.HasFixedVersion)
+                {
+                    details.SetFixedVersion(setting.FixedVersion);
+                }
+                else
+                {
+                    details.RemoveFixedVersion();
+                }
+                
                 GUILayout.BeginHorizontal(GUI.skin.box);
-                
-                var versionText = ToLocalVersionString(details);
-                if (details.HasUpdate
-                    && !details.IsFixedVersion)
-                {
-                    if (details.IsInstalled)
-                    {
-                        versionText += " \u2192 ";
-                    }
-                    versionText += ToServerVersionString(details);
-                }
-                
-                if (string.IsNullOrEmpty(versionText))
-                {
-                    versionText = details.IsFixedVersion
-                        ? ToFixedVersion(details)
-                        : " v---";
-                }
-                
-                if (details.IsFixedVersion)
-                {
-                    versionText += " (Fixed)";
-                }
-                
+
                 var displayName = details.IsLoaded
-                        ? details.Remote.displayName
+                        ? details.Remote.DisplayName
                         : "Unknown";
                 
                 if (isSettingMode)
@@ -437,34 +443,92 @@ namespace QuickAdMobIntegrator.Editor
                     GUILayout.Label(displayName, GUILayout.Width(170));
                 }
                 
+                if(!details.IsLoaded
+                   || !isSettingMode)
                 {
+                    var versionText = ToLocalVersionString(details);
+                    if (details.HasUpdate)
+                    {
+                        if (details.IsInstalled)
+                        {
+                            versionText += " \u2192 ";
+                        }
+                        versionText += setting.HasFixedVersion
+                            ? setting.FixedVersion
+                            : ToServerVersionString(details);
+                    }
+                    if (string.IsNullOrEmpty(versionText))
+                    {
+                        versionText = details.IsFixedVersion
+                            ? ToFixedVersion(details)
+                            : " v---";
+                    }
+                    if (details.IsFixedVersion)
+                    {
+                        versionText += " (Fixed)";
+                    }
+                    
                     var color = GUI.color;
                     if (details.IsInstalled
-                        && details.HasUpdate
-                        && !details.IsFixedVersion)
+                        && details.HasUpdate)
                     {
                         GUI.color = Color.yellow;
                     }
                     GUILayout.Label(versionText);
                     GUI.color = color;
                 }
-                
-                if (details.IsInstalled)
+                else if(details.IsLoaded)
                 {
-                    var width = GUILayout.Width(22);
-                    var height = GUILayout.Height(EditorGUIUtility.singleLineHeight);
-                    var icon = details.HasUpdate && !details.IsFixedVersion ? _updateIcon : _installedIcon;
-                    GUILayout.Label(icon, width, height);
+                    var versions = details.Remote.Versions;
+                    var pool = ArrayPool<string>.Shared;
+                    var array = pool.Rent(versions.Length);
+
+                    try
+                    {
+                        for (var i = 0; i < versions.Length; i++)
+                        {
+                            array[i] = "v" + versions[i];
+                        }
+                        array[versions.Length] = "Always latest";
+                        
+                        var currentVersion = setting.HasFixedVersion
+                            ? setting.FixedVersion
+                            : array[versions.Length];
+                        
+                        var index = Array.IndexOf(versions, currentVersion);
+                        if (index < 0)
+                        {
+                            index = versions.Length;
+                        }
+                        var newIndex = EditorGUILayout.Popup(index, array);
+                        if (index != newIndex)
+                        {
+                            setting.FixedVersion = newIndex == versions.Length
+                                                        ? string.Empty
+                                                        : versions[newIndex];
+                        }
+                    }
+                    finally
+                    {
+                        pool.Return(array, clearArray: true);
+                    }
                 }
                 
                 if(!isSettingMode)
                 {
+                    if (details.IsInstalled)
+                    {
+                        var width = GUILayout.Width(22);
+                        var height = GUILayout.Height(EditorGUIUtility.singleLineHeight);
+                        var icon = details.HasUpdate ? _updateIcon : _installedIcon;
+                        GUILayout.Label(icon, width, height);
+                    }
+
                     var buttonText = GetButtonText(details);
                     EditorGUI.BeginDisabledGroup(!isActiveButton || !details.IsLoaded || _manager.IsProcessing);
                     if (GUILayout.Button(buttonText, GUILayout.Width(70)))
                     {
                         if (details.HasUpdate
-                            && !details.IsFixedVersion
                             || !details.IsInstalled)
                         {
                             InstallPackage(details.PackageInstallUrl);
@@ -473,7 +537,7 @@ namespace QuickAdMobIntegrator.Editor
                         {
                             _tokenSource?.SafeCancelAndDispose();
                             _tokenSource = new CancellationTokenSource();
-                            _manager.Installer.UnInstall(details.Local.name, _tokenSource.Token)
+                            _manager.Installer.UnInstall(details.Local.Name, _tokenSource.Token)
                                 .Handled(_ =>
                                 {
                                     _tokenSource?.Dispose();
@@ -529,8 +593,7 @@ namespace QuickAdMobIntegrator.Editor
             {
                 return "Install";
             }
-            if (details.HasUpdate
-                && !details.IsFixedVersion)
+            if (details.HasUpdate)
             {
                 return "Update";
             }
@@ -538,16 +601,16 @@ namespace QuickAdMobIntegrator.Editor
         }
         
         string ToLocalVersionString(PackageInfoDetails details)
-            => details.IsInstalled ? "v" + details.Local.version : string.Empty;
+            => details.IsInstalled ? "v" + details.Local.Version : string.Empty;
 
         string ToServerVersionString(PackageInfoDetails details)
-            => details.IsLoaded ? "v" + details.Remote.version : string.Empty;
+            => details.IsLoaded ? "v" + details.Remote.LatestVersion : string.Empty;
         
         string ToFixedVersion(PackageInfoDetails details)
         {
             if (details.IsInstalled)
             {
-                return "v" + details.Local.version;
+                return "v" + details.Local.Version;
             }
             return "v" + details.GetVersionParam();
         }
@@ -562,7 +625,7 @@ namespace QuickAdMobIntegrator.Editor
             
             foreach (var details in _mediationPackageInfos)
             {
-                var setting = _manager.Settings.GetByName(details.Remote.name);
+                var setting = _manager.Settings.GetByName(details.Remote.Name);
                 if (setting.IsEnabled)
                 {
                     packages.Add(details.PackageInstallUrl);
@@ -581,7 +644,7 @@ namespace QuickAdMobIntegrator.Editor
             
             foreach (var details in _mediationPackageInfos)
             {
-                var setting = _manager.Settings.GetByName(details.Remote.name);
+                var setting = _manager.Settings.GetByName(details.Remote.Name);
                 if (setting.IsEnabled
                     && details.IsInstalled)
                 {

@@ -1,12 +1,15 @@
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using Newtonsoft.Json.Linq;
+using UnityEngine.Pool;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace QuickAdMobIntegrator.Editor
@@ -31,7 +34,7 @@ namespace QuickAdMobIntegrator.Editor
             }
             
             var info = default(PackageInfo);
-            var (name, version) = ExtractPackageInfo(openUpmPackageInfoUrl);
+            var name = ExtractPackageInfo(openUpmPackageInfoUrl);
             try
             {
                 IsProcessing = true;
@@ -41,9 +44,9 @@ namespace QuickAdMobIntegrator.Editor
                 var local = info != default
                     ? new PackageLocalInfo
                     {
-                        name = info.name,
-                        version = info.version,
-                        displayName = info.displayName
+                        Name = info.name,
+                        Version = info.version,
+                        DisplayName = info.displayName
                     }
                     : default;
                 
@@ -63,10 +66,6 @@ namespace QuickAdMobIntegrator.Editor
                     }
                 }
                 
-                if (version != "latest")
-                {
-                    name += "@" + version;
-                }
                 return new PackageInfoDetails(local, server, name);
             }
             catch (Exception ex)
@@ -101,11 +100,55 @@ namespace QuickAdMobIntegrator.Editor
                 using var request = UnityWebRequest.Get(openUpmPackageInfoUrl);
                 request.timeout = 30;
                 await request.SendWebRequest();
-                if (request.isDone)
+                if (!request.isDone)
                 {
-                    return JsonConvert.DeserializeObject<PackageRemoteInfo>(request.downloadHandler.text);
+                    throw new InvalidOperationException(request.error);
                 }
-                throw new InvalidOperationException(request.error);
+            
+                var jsonObject = JObject.Parse(request.downloadHandler.text);
+                var result = new PackageRemoteInfo();
+                if (jsonObject.TryGetValue("name", out var nameToken))
+                {
+                    result.Name = nameToken.ToString();
+                }
+
+                var versions = HashSetPool<string>.Get();
+                try
+                {
+                    if (jsonObject.TryGetValue("versions", out var versionsToken)
+                        && versionsToken is JObject versionsDict)
+                    {
+                        foreach (var versionProperty in versionsDict.Properties())
+                        {
+                            versions.Add(versionProperty.Name);
+
+                            if (string.IsNullOrEmpty(result.DisplayName)
+                                && versionProperty.Value is JObject versionObject
+                                && versionObject.TryGetValue("displayName", out var displayName))
+                            {
+                                result.DisplayName = displayName.ToString();
+                            }
+                        }
+                    }
+                    result.Versions = versions.ToArray();
+                }
+                finally
+                {
+                    HashSetPool<string>.Release(versions);
+                }
+
+                if (jsonObject.TryGetValue("dist-tags", out var dist)
+                    && dist is JObject distTags
+                    && distTags.TryGetValue("latest", out var latest))
+                {
+                    result.LatestVersion = latest.ToString();
+                }
+                else if (versions.Count > 0)
+                {
+                    result.LatestVersion = versions.Max();
+                }
+
+                return result;
             }
             finally
             {
@@ -113,21 +156,16 @@ namespace QuickAdMobIntegrator.Editor
             }
         }
 
-        public static (string Name, string Version) ExtractPackageInfo(string url)
+        public static string ExtractPackageInfo(string url)
         {
             if (string.IsNullOrEmpty(url))
             {
-                return (default, default);
+                return string.Empty;
             }
             var match = PackageRegex.Match(url);
-            var name = match.Success
-                    ? match.Groups[1].Value
-                    : default;
-            var version = match.Success
-                    && match.Groups[2].Success
-                        ? match.Groups[2].Value
-                        : default;
-            return (name, version);
+            return match.Success
+                ? match.Groups[1].Value
+                : string.Empty;
         }
         
         public static async Task<PackageRemoteInfo> GetPackageInfoFromCache(string packageName, CancellationToken token = default)
@@ -166,6 +204,10 @@ namespace QuickAdMobIntegrator.Editor
                 if (repoName.EndsWith(".git"))
                 {
                     repoName = repoName.Substring(0, repoName.Length - 4);
+                }
+                if (string.IsNullOrEmpty(repoName))
+                {
+                    return userName;
                 }
                 return $"{userName}@{repoName}";
             }
