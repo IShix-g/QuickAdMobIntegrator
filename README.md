@@ -51,6 +51,22 @@ Deselect any mediation platforms that you do not need.
 
 <img src="Docs/qai_setting_mediation.jpg" width="550"/>
 
+### {1.3.0} Package Selection Now Available
+
+You can now select which packages to install.
+If you want to always use the latest version, specify 'Always latest'. Note that even with 'Always latest' selected,
+packages won't update automatically - you'll need to click the Update button.
+
+<img src="Docs/qai_setting_update.jpg" width="550"/>
+
+### {1.4.0} Added Notes Feature
+
+A simple notes feature has been added.
+For example, when specifying a package version, you can write down the reason for choosing that version, which can be
+helpful when reviewing later.
+
+<img src="Docs/qai_setting_notes.jpg" width="550"/>
+
 ### Complete Setup
 
 Click the back button to complete the initial setup.
@@ -67,6 +83,7 @@ Please delete the following items:
 - `Assets/Plugins/Android/GoogleMobileAdsPlugin`
 - `Assets/Plugins/iOS/GADUAdNetworkExtras`
 - `Assets/Plugins/iOS/unity-plugin-library.a`
+- Assets/Plugins/iOS/NativeTemplates/
 
 ### Install SDKs and Mediation Packages
 

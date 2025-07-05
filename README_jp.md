@@ -48,6 +48,20 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 
 <img src="Docs/qai_setting_mediation.jpg" width="550"/>
 
+### {1.3.0} パッケージの選択が可能に
+
+インストールするパッケージを選択できるようになりました。  
+常に最新にしたい場合は`Always latest`を指定してください。また、`Always latest`を指定しても自動でアップデートされる事はありません。Updateボタンをクリックする必要があります。
+
+<img src="Docs/qai_setting_update.jpg" width="550"/>
+
+### {1.4.0} メモ機能を追加
+
+簡単なメモ機能を追加しました。  
+例えば、パッケージのバージョンを指定した場合、その理由などを書いておくと後で見返す時に便利です。
+
+<img src="Docs/qai_setting_notes.jpg" width="550"/>
+
 ### 設定の完了
 
 戻るボタンをクリックして設定を完了します。
@@ -59,11 +73,12 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 下記を削除してください。
 
 - Assets/ExternalDependencyManager
-- Assets/GoogleMobileAds (Resources以外)
-- Assets/Plugins/Android/googlemobileads-unity.aar
+- Assets/GoogleMobileAds/ (Resources以外)
+- Assets/Plugins/Android/googlemobileads-unity
 - Assets/Plugins/Android/GoogleMobileAdsPlugin
 - Assets/Plugins/iOS/GADUAdNetworkExtras
-- Assets/Plugins/iOS/unity-plugin-library.a
+- Assets/Plugins/iOS/unity-plugin-library
+- Assets/Plugins/iOS/NativeTemplates/
 
 ### SDKとメディエーションのインストール
 
