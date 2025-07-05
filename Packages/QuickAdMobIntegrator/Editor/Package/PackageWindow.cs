@@ -53,6 +53,7 @@ namespace QuickAdMobIntegrator.Editor
         bool _isSettingMode;
         bool _superReload;
         bool _isShowSetUpFoldout;
+        bool _isUpdated;
 
         void OnEnable()
         {
@@ -128,8 +129,9 @@ namespace QuickAdMobIntegrator.Editor
                 }
                 else if (clickedOpenSetting)
                 {
-                    if (_isSettingMode)
+                    if (_isSettingMode && _isUpdated)
                     {
+                        _isUpdated = false;
                         ReloadPackages(false);
                     }
                     _isSettingMode = !_isSettingMode;
@@ -283,19 +285,12 @@ namespace QuickAdMobIntegrator.Editor
                 GUILayout.Label("Mediation", style, GUILayout.ExpandWidth(true), GUILayout.Height(30));
             }
             
-            EditorGUI.BeginChangeCheck();
-            
             foreach (var packageInfo in _mediationPackageInfos)
             {
                 if (packageInfo is {IsLoaded: true})
                 {
                     DrawPackage(packageInfo, isSettingMode:_isSettingMode, isActiveButton:_googleAdsPackageInfo.IsInstalled);
                 }
-            }
-            
-            if (EditorGUI.EndChangeCheck())
-            {
-                _manager.Settings.Save();
             }
             
             if (_isSettingMode)
@@ -445,6 +440,7 @@ namespace QuickAdMobIntegrator.Editor
                         && setting is PackageSettings.Scope scope)
                     {
                         scope.IsEnabled = isEnabled;
+                        _isUpdated = true;
                     }
                     GUI.color = color;
                 }
@@ -541,6 +537,7 @@ namespace QuickAdMobIntegrator.Editor
                             setting.FixedVersion = newIndex == versions.Length
                                                         ? string.Empty
                                                         : versions[newIndex];
+                            _isUpdated = true;
                         }
                     }
                     finally
