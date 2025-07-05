@@ -116,7 +116,7 @@ namespace QuickAdMobIntegrator.Editor
             }
             if (_manager.IsCompletedRegistrySetUp)
             {
-                EditorGUI.BeginDisabledGroup(_manager.IsProcessing);
+                EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
                 GUILayout.BeginHorizontal(new GUIStyle() { padding = new RectOffset(5, 5, 5, 5) });
             
                 var width = GUILayout.Width(33);
@@ -154,7 +154,13 @@ namespace QuickAdMobIntegrator.Editor
                          && clickedVersion)
                 {
                     _tokenSource = new CancellationTokenSource();
-                    _versionChecker.CheckVersion(_tokenSource.Token);
+                    _versionChecker.Fetch()
+                        .ContinueOnMainThread(task =>
+                        {
+                            _tokenSource?.Dispose();
+                            _tokenSource = new CancellationTokenSource();
+                            _versionChecker.CheckVersion(_tokenSource.Token);
+                        });
                 }
             }
             
@@ -259,7 +265,7 @@ namespace QuickAdMobIntegrator.Editor
                 
                 if (!_isSettingMode)
                 {
-                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_googleAdsPackageInfo.IsInstalled);
+                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_googleAdsPackageInfo.IsInstalled || _versionChecker.IsProcessing);
                     if (GUILayout.Button("Install All", GUILayout.Width(70)))
                     {
                         var userAgreed = EditorUtility.DisplayDialog(
@@ -310,7 +316,7 @@ namespace QuickAdMobIntegrator.Editor
             
             if (_isSettingMode)
             {
-                EditorGUI.BeginDisabledGroup(_manager.IsProcessing);
+                EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
                 GUILayout.Space(20);
                 if (GUILayout.Button("Remove all installed packages.", GUILayout.Height(EditorGUIUtility.singleLineHeight + 4)))
                 {
