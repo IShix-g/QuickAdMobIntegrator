@@ -22,46 +22,62 @@ MonoBehaviour:
   AdmobScope:
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile
     _helpUrl: https://developers.google.com/admob/unity/quick-start
+    _fixedVersion: 
   MediationScopes:
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.unity
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/unity
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.metaaudiencenetwork
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/meta
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.ironsource
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/ironsource
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.pangle
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/pangle
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.mytarget
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/mytarget
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.chartboost
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/chartboost
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.dtexchange
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/dt-exchange
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.inmobi
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/inmobi
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.applovin
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/applovin
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.liftoffmonetize
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/liftoff-monetize
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.mintegral
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/mintegral
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.maio
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/maio
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.imobile
     _helpUrl: https://developers.google.com/admob/unity/mediation/imobile
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.line
     _helpUrl: https://developers.google.com/admob/unity/mediation/line
+    _fixedVersion: 
+  Notes: 
