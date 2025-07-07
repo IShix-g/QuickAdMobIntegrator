@@ -303,8 +303,10 @@ namespace QuickAdMobIntegrator.Editor
                     alignment = TextAnchor.MiddleCenter,
                     padding = new RectOffset(8, 78, 10, 10)
                 };
-                GUILayout.Label("Mediation", style, GUILayout.ExpandWidth(true), GUILayout.Height(30));
+                GUILayout.Label("Mediation\n(Optional)", style, GUILayout.ExpandWidth(true), GUILayout.Height(50));
             }
+
+            EditorGUILayout.HelpBox("To maximize revenue with multiple ad networks, including non-AdMob ads, use mediation.", MessageType.Info);
             
             foreach (var packageInfo in _mediationPackageInfos)
             {

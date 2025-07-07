@@ -44,7 +44,11 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 
 ### メディエーションの選択
 
-必要無いメディエーションの選択を外してください
+必要無い[メディエーション](https://developers.google.com/admob/unity/mediation)の選択を外してください。
+
+#### Mediation (Optional)
+[メディエーション](https://developers.google.com/admob/unity/mediation)は設定しなくてもAdmobを利用できます。  
+複数の広告ネットワーク（AdMob以外の広告を含む）を組み合わせて収益を最大化したい場合は、メディエーションを導入してください。
 
 <img src="Docs/qai_setting_mediation.jpg" width="550"/>
 
