@@ -47,7 +47,11 @@ Click the settings icon (gear icon) in the toolbar.
 
 ### Choose Mediation Platforms
 
-Deselect any mediation platforms that you do not need.
+Deselect any [mediation platforms](https://developers.google.com/admob/unity/mediation) that you do not need.
+
+#### Mediation (Optional)
+AdMob can be used without setting up [mediation](https://developers.google.com/admob/unity/mediation).  
+If you want to maximize revenue by combining multiple ad networks, including non-AdMob ads, consider implementing mediation.
 
 <img src="Docs/qai_setting_mediation.jpg" width="550"/>
 
