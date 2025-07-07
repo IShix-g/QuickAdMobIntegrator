@@ -45,13 +45,17 @@ Click the settings icon (gear icon) in the toolbar.
 
 <img src="Docs/qai_open_setting.jpg" width="550"/>
 
-### Choose Mediation Platforms
+### Selecting Mediation (Optional)
 
-Deselect any [mediation platforms](https://developers.google.com/admob/unity/mediation) that you do not need.
+Uncheck the [mediation](https://developers.google.com/admob/unity/mediation) options that you don't need.
 
-#### Mediation (Optional)
-AdMob can be used without setting up [mediation](https://developers.google.com/admob/unity/mediation).  
-If you want to maximize revenue by combining multiple ad networks, including non-AdMob ads, consider implementing mediation.
+You can use AdMob without configuring any mediation.  
+Consider implementing mediation when you want to maximize revenue by combining multiple ad networks in addition to
+AdMob.
+
+#### What is Mediation?
+
+Mediation is a feature that allows you to serve ads from third-party ad companies through AdMob.
 
 <img src="Docs/qai_setting_mediation.jpg" width="550"/>
 
@@ -74,18 +78,18 @@ Click the back button to complete the initial setup.
 Please delete the following items:
 
 - `Assets/ExternalDependencyManager`
-- `Assets/GoogleMobileAds` (excluding `Resources`)
+- `Assets/GoogleMobileAds` **(excluding `Resources`)**
 - `Assets/Plugins/Android/googlemobileads-unity.aar`
 - `Assets/Plugins/Android/GoogleMobileAdsPlugin`
 - `Assets/Plugins/iOS/GADUAdNetworkExtras`
 - `Assets/Plugins/iOS/unity-plugin-library.a`
-- Assets/Plugins/iOS/NativeTemplates/
+- `Assets/Plugins/iOS/NativeTemplates/`
 
-### Install SDKs and Mediation Packages
+### {1.2.0} Setup Instructions
 
-Click the `Install All` button to install all displayed SDKs and mediation packages.
+Please follow the setup instructions to install.
 
-<img src="Docs/qai_install_all.jpg" width="550"/>
+<img src="Docs/qai_setup.jpg" width="550"/>
 
 ### {1.4.0} Added Notes Feature
 
