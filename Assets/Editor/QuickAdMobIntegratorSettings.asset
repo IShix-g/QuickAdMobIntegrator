@@ -35,7 +35,7 @@ MonoBehaviour:
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.ironsource
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/ironsource
-    _fixedVersion: 3.8.1
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.pangle
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/pangle
