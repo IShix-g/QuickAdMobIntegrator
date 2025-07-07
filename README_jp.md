@@ -42,13 +42,15 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 
 <img src="Docs/qai_open_setting.jpg" width="550"/>
 
-### メディエーションの選択
+### メディエーションの選択 (Optional)
 
 必要無い[メディエーション](https://developers.google.com/admob/unity/mediation)の選択を外してください。
+  
+設定しなくてもAdmobを利用できます。  
+AdMobに加えて複数の広告ネットワークを組み合わせて収益を最大化したい場合に導入してください。
 
-#### Mediation (Optional)
-[メディエーション](https://developers.google.com/admob/unity/mediation)は設定しなくてもAdmobを利用できます。  
-複数の広告ネットワーク（AdMob以外の広告を含む）を組み合わせて収益を最大化したい場合は、メディエーションを導入してください。
+#### メディエーションとは？
+Admobを介して第三者の広告会社の広告を流す事ができる機能です。
 
 <img src="Docs/qai_setting_mediation.jpg" width="550"/>
 
@@ -67,15 +69,21 @@ https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobInte
 
 ### Admobをインストール済みの方
 
-下記を削除してください。
+**下記ディレクトリ削除してください。**
 
-- Assets/ExternalDependencyManager
-- Assets/GoogleMobileAds/ (Resources以外)
-- Assets/Plugins/Android/googlemobileads-unity
-- Assets/Plugins/Android/GoogleMobileAdsPlugin
-- Assets/Plugins/iOS/GADUAdNetworkExtras
-- Assets/Plugins/iOS/unity-plugin-library
-- Assets/Plugins/iOS/NativeTemplates/
+- `Assets/ExternalDependencyManager`
+- `Assets/GoogleMobileAds/` **(`Resources`以外)**
+- `Assets/Plugins/Android/googlemobileads-unity`
+- `Assets/Plugins/Android/GoogleMobileAdsPlugin`
+- `Assets/Plugins/iOS/GADUAdNetworkExtras`
+- `Assets/Plugins/iOS/unity-plugin-library`
+- `Assets/Plugins/iOS/NativeTemplates/`
+
+### {1.2.0} セットアップの手順
+
+セットアップの手順に従ってインストールしてください。
+
+<img src="Docs/qai_setup.jpg" width="550"/>
 
 ### SDKとメディエーションのインストール
 
