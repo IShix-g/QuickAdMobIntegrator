@@ -44,7 +44,7 @@ namespace QuickAdMobIntegrator.Editor
             var url = Settings.AdmobScope.OpenUpmInfoUrl;
             var details = await _fetcher.FetchPackageInfo(url, superReload, token);
             var displayName = details.Remote.DisplayName;
-            details.Remote.DisplayName = displayName.Replace("for Unity", "");
+            details.Remote.DisplayName = displayName.Replace("for Unity", string.Empty);
             return details;
         }
 
@@ -67,7 +67,10 @@ namespace QuickAdMobIntegrator.Editor
                     {
                         var details = task.Result;
                         var displayName = details.Remote.DisplayName;
-                        details.Remote.DisplayName = displayName.Replace("Google Mobile Ads", "").Replace("Mediation", "");
+                        details.Remote.DisplayName = displayName
+                                                        .Replace("Google Mobile Ads", string.Empty)
+                                                        .Replace("Mediation", string.Empty)
+                                                        .Replace("for Unity", string.Empty);
                         onLoadedAction?.Invoke(index, task.Result);
                     });
                 }
