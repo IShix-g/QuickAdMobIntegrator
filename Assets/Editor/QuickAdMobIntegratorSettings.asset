@@ -22,7 +22,7 @@ MonoBehaviour:
   AdmobScope:
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile
     _helpUrl: https://developers.google.com/admob/unity/quick-start
-    _fixedVersion: 10.0.0
+    _fixedVersion: 
   MediationScopes:
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.unity
@@ -31,7 +31,7 @@ MonoBehaviour:
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.metaaudiencenetwork
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/meta
-    _fixedVersion: 3.17.0
+    _fixedVersion: 
   - _isEnabled: 1
     _openUpmInfoUrl: https://package.openupm.com/com.google.ads.mobile.mediation.ironsource
     _helpUrl: https://developers.google.com/ad-manager/mobile-ads-sdk/unity/mediation/ironsource

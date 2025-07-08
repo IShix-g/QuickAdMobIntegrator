@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using QuickAdMobIntegrator.Admob.Editor;
 using UnityEditor;
@@ -15,6 +16,21 @@ namespace QuickAdMobIntegrator.Editor
         const string _gitInstallUrl = _gitURL + ".git?path=Packages/QuickAdMobIntegrator";
         const string _gitBranchName = "main";
         const string _packageName = "com.ishix.quickadmobintegrator";
+        
+        static readonly IReadOnlyList<string> s_admobPaths = new[]
+        {
+            "Assets/ExternalDependencyManager",
+            "Assets/GoogleMobileAds",
+            "Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib",
+            "Assets/Plugins/Android/googlemobileads-unity.aar",
+            "Assets/Plugins/iOS/NativeTemplates",
+            "Assets/Plugins/iOS/GADUAdNetworkExtras.h",
+            "Assets/Plugins/iOS/unity-plugin-library.a"
+        };
+        static readonly IReadOnlyList<string> s_admobExcludePaths = new[]
+        {
+            "Assets/GoogleMobileAds/Resources",
+        };
         
         [MenuItem("Window/Quick AdMob Integrator")]
         public static void Open() => Open(IsFirstOpen);
@@ -56,6 +72,7 @@ namespace QuickAdMobIntegrator.Editor
         CancellationTokenSource _mediationTokenSource;
         AdMobSettingsValidator _adMobSettingsValidator;
         readonly PackageVersionChecker _versionChecker = new (_gitInstallUrl, _gitBranchName, _packageName);
+        readonly PathManager _pathManager = new (s_admobPaths, s_admobExcludePaths);
         bool _isSettingMode;
         bool _superReload;
         bool _isShowSetUpFoldout;
@@ -80,7 +97,6 @@ namespace QuickAdMobIntegrator.Editor
             _isShowSetUpFoldout = IsShowSetUpFoldout;
             
             EditorApplication.delayCall += Initialize;
-            _versionChecker.Fetch().Handled();
         }
 
         void Initialize()
@@ -90,6 +106,7 @@ namespace QuickAdMobIntegrator.Editor
             {
                 ReloadPackages(_superReload);
             }
+            _versionChecker.Fetch().Handled();
         }
 
         void OnDisable()
@@ -114,6 +131,7 @@ namespace QuickAdMobIntegrator.Editor
             {
                 return;
             }
+            
             if (_manager.IsCompletedRegistrySetUp)
             {
                 EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
@@ -127,23 +145,24 @@ namespace QuickAdMobIntegrator.Editor
                 var clickedOpenManager = GUILayout.Button("Package Manager", height);
                 var pluginVersion = _versionChecker.IsLoaded ? _versionChecker.LocalInfo.VersionString : "---";
                 var clickedVersion = GUILayout.Button(pluginVersion, GUILayout.Width(100), height);
-            
+
                 GUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
-                
-                if (clickedStartReload)
-                {
-                    _isSettingMode = false;
-                    ReloadPackages(true);
-                }
-                else if (clickedOpenSetting)
+
+                if (clickedOpenSetting)
                 {
                     if (_isSettingMode && _isUpdated)
                     {
                         _isUpdated = false;
-                        ReloadPackages(false);
+                        Repaint();
                     }
                     _isSettingMode = !_isSettingMode;
+                }
+                else if (clickedStartReload)
+                {
+                    _isSettingMode = false;
+                    ReloadPackages(true);
+                    _versionChecker.Fetch().Handled();
                 }
                 else if (clickedOpenManager)
                 {
@@ -176,7 +195,6 @@ namespace QuickAdMobIntegrator.Editor
             if (!_manager.IsCompletedRegistrySetUp)
             {
                 GUILayout.Space(20);
-
                 GUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 
@@ -195,7 +213,8 @@ namespace QuickAdMobIntegrator.Editor
             
             GUILayout.Space(5);
             
-            if (_googleAdsPackageInfo == default)
+            if (_googleAdsPackageInfo == default
+                || _manager.IsProcessing)
             {
                 GUILayout.Label("Now Loading...");
                 return;
@@ -203,6 +222,7 @@ namespace QuickAdMobIntegrator.Editor
             
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Width(position.width));
             
+            if (!_isSettingMode)
             {
                 GUILayout.Space(10);
                 var style = new GUIStyle(EditorStyles.foldout)
@@ -211,36 +231,65 @@ namespace QuickAdMobIntegrator.Editor
                     margin = new RectOffset(5, 0 ,0 ,0)
                 };
                 _isShowSetUpFoldout = EditorGUILayout.Foldout(_isShowSetUpFoldout, "Essential Setup Steps", style);
-            }
-
-            if (_isShowSetUpFoldout)
-            {
-                GUILayout.Space(15);
-                DrawChecklistItem(
-                    $"Please install {_googleAdsPackageInfo.Remote.DisplayName} first.",
-                    _googleAdsPackageInfo.IsInstalled,
-                    !_manager.IsProcessing && !_googleAdsPackageInfo.IsInstalled,
-                    _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
-                    () =>
-                    {
-                        if (!_googleAdsPackageInfo.IsInstalled)
-                        {
-                            InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
-                        }
-                    }
-                );
-
-                GUILayout.Space(5);
-            
-                DrawChecklistItem(
-                    "Set up the Google Mobile Ads App ID", 
-                    _adMobSettingsValidator.IsValid,
-                    !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
-                    _adMobSettingsValidator.IsValid ? "Configured" : "Set Up",
-                    () => _adMobSettingsValidator.OpenSettings()
-                );
                 
-                GUILayout.Space(20);
+                if (_isShowSetUpFoldout)
+                {
+                    GUILayout.Space(15);
+                    
+                    DrawChecklistItem(
+                        "Delete installed AdMob",
+                        _pathManager.AreAllPathsDeleted,
+                        !_manager.IsProcessing && !_pathManager.AreAllPathsDeleted,
+                        !_pathManager.AreAllPathsDeleted,
+                        _pathManager.AreAllPathsDeleted ? "Done" : "Delete",
+                        () =>
+                        {
+                            var userSelectedYes = EditorUtility.DisplayDialog(
+                                title: "Delete AdMob",
+                                message: "Do you want to delete installed AdMob?\nTarget paths:\n" + string.Join("\n", s_admobPaths) + "\nExcluded paths:\n" + string.Join("\n", s_admobExcludePaths),
+                                ok: "Delete",
+                                cancel: "Close"
+                            );
+                            
+                            if (userSelectedYes
+                                && !_pathManager.AreAllPathsDeleted)
+                            {
+                                _pathManager.DeleteAllPaths();
+                                AssetDatabase.Refresh();
+                            }
+                        }
+                    );
+
+                    GUILayout.Space(5);
+                    
+                    DrawChecklistItem(
+                        $"Install {_googleAdsPackageInfo.Remote.DisplayName} first.",
+                        _googleAdsPackageInfo.IsInstalled,
+                        !_manager.IsProcessing && _pathManager.AreAllPathsDeleted && !_googleAdsPackageInfo.IsInstalled,
+                        !_googleAdsPackageInfo.IsInstalled,
+                        _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
+                        () =>
+                        {
+                            if (!_googleAdsPackageInfo.IsInstalled)
+                            {
+                                InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
+                            }
+                        }
+                    );
+
+                    GUILayout.Space(5);
+            
+                    DrawChecklistItem(
+                        "Set up the Google Mobile Ads App ID", 
+                        _adMobSettingsValidator.IsValid,
+                        !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
+                        true,
+                        _adMobSettingsValidator.IsValid ? "Configured" : "Set Up",
+                        () => _adMobSettingsValidator.OpenSettings()
+                    );
+
+                    GUILayout.Space(20);
+                }
             }
 
             if (_isSettingMode)
@@ -265,7 +314,7 @@ namespace QuickAdMobIntegrator.Editor
                 
                 if (!_isSettingMode)
                 {
-                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_googleAdsPackageInfo.IsInstalled || _versionChecker.IsProcessing);
+                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_pathManager.AreAllPathsDeleted || !_googleAdsPackageInfo.IsInstalled || _versionChecker.IsProcessing);
                     if (GUILayout.Button("Install All", GUILayout.Width(70)))
                     {
                         var userAgreed = EditorUtility.DisplayDialog(
@@ -295,7 +344,7 @@ namespace QuickAdMobIntegrator.Editor
                 GUILayout.EndHorizontal();
             }
             
-            DrawPackage(_googleAdsPackageInfo, isSettingMode:_isSettingMode, isActiveButton:true);
+            DrawPackage(_googleAdsPackageInfo, isSettingMode:_isSettingMode, isActiveButton:_pathManager.AreAllPathsDeleted);
 
             {
                 var style = new GUIStyle(GUI.skin.label)
@@ -306,7 +355,11 @@ namespace QuickAdMobIntegrator.Editor
                 GUILayout.Label("Mediation\n(Optional)", style, GUILayout.ExpandWidth(true), GUILayout.Height(50));
             }
 
-            EditorGUILayout.HelpBox("To maximize revenue with multiple ad networks, including non-AdMob ads, use mediation.", MessageType.Info);
+            if (_isSettingMode)
+            {
+                EditorGUILayout.HelpBox("Mediation - To maximize revenue with multiple ad networks, including non-AdMob ads, use mediation.", MessageType.Info);
+                GUILayout.Space(10);
+            }
             
             foreach (var packageInfo in _mediationPackageInfos)
             {
@@ -320,7 +373,7 @@ namespace QuickAdMobIntegrator.Editor
             {
                 EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
                 GUILayout.Space(20);
-                if (GUILayout.Button("Remove all installed packages.", GUILayout.Height(EditorGUIUtility.singleLineHeight + 4)))
+                if (GUILayout.Button("Remove all installed packages.", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
                 {
                     var userAgreed = EditorUtility.DisplayDialog(
                         "Remove All",
@@ -386,6 +439,7 @@ namespace QuickAdMobIntegrator.Editor
         
         void ReloadPackages(bool superReload)
         {
+            _superReload = false;
             _adMobSettingsValidator.Validate();
             
             _tokenSource = new CancellationTokenSource();
@@ -457,7 +511,7 @@ namespace QuickAdMobIntegrator.Editor
                             || details.IsInstalled
                             || setting.IsEnabled,
                             " " + displayName,
-                            GUILayout.Width(180));
+                            GUILayout.Width(140));
 
                     if (isEnabled != setting.IsEnabled
                         && setting is PackageSettings.Scope scope)
@@ -466,13 +520,37 @@ namespace QuickAdMobIntegrator.Editor
                         _isUpdated = true;
                     }
                     GUI.color = color;
+
+                    if (!string.IsNullOrEmpty(setting.HelpUrl))
+                    {
+                        var iconButtonStyle = new GUIStyle(GUI.skin.label)
+                        {
+                            fixedWidth = 20,
+                            fixedHeight = EditorGUIUtility.singleLineHeight,
+                        };
+                        var clickedHelp = GUILayout.Button(_helpIcon, iconButtonStyle);
+
+                        var lastRect = GUILayoutUtility.GetLastRect();
+                        EditorGUIUtility.AddCursorRect(lastRect, MouseCursor.Link);
+                    
+                        if (clickedHelp)
+                        {
+                            Application.OpenURL(setting.HelpUrl);
+                        }
+                    }
+                    else
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label(string.Empty, GUILayout.Width(20));
+                        GUILayout.EndHorizontal();
+                    }
                 }
                 else if (!string.IsNullOrEmpty(setting.HelpUrl))
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Width(170));
+                    GUILayout.BeginHorizontal(GUILayout.Width(140));
                     var buttonStyle = new GUIStyle(GUI.skin.label)
                     {
-                        fixedWidth = 150,
+                        fixedWidth = 120,
                         fixedHeight = EditorGUIUtility.singleLineHeight,
                     };
                     var clickedHelp = GUILayout.Button(displayName, buttonStyle);
@@ -494,7 +572,9 @@ namespace QuickAdMobIntegrator.Editor
                 }
                 else
                 {
-                    GUILayout.Label(displayName, GUILayout.Width(170));
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(displayName, GUILayout.Width(140));
+                    GUILayout.EndHorizontal();
                 }
                 
                 if(!details.IsLoaded
@@ -619,20 +699,23 @@ namespace QuickAdMobIntegrator.Editor
                 });
         }
         
-        void DrawChecklistItem(string label, bool isComplete, bool buttonActive, string buttonName, Action onClick)
+        void DrawChecklistItem(string label, bool isComplete, bool buttonActive, bool buttonHide, string buttonName, Action onClick)
         {
             var style = new GUIStyle() {padding = new RectOffset(22, 8, 0, 3)};
             GUILayout.BeginHorizontal(style);
             GUILayout.Label(isComplete ? _completedIcon : _notCompletedIcon, GUILayout.Width(15), GUILayout.Height(15));
             GUILayout.Label(label);
 
-            EditorGUI.BeginDisabledGroup(!buttonActive);
-            if (GUILayout.Button(buttonName, GUILayout.Width(75)))
+            if (buttonHide)
             {
-                onClick?.Invoke();
+                EditorGUI.BeginDisabledGroup(!buttonActive || _manager.IsProcessing || _versionChecker.IsProcessing);
+                if (GUILayout.Button(buttonName, GUILayout.Width(75)))
+                {
+                    onClick?.Invoke();
+                }
+                EditorGUI.EndDisabledGroup();
             }
-            EditorGUI.EndDisabledGroup();
-
+            
             GUILayout.EndHorizontal();
         }
         
