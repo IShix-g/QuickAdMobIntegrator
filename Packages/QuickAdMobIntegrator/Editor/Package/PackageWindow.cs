@@ -2,11 +2,11 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using QuickAdMobIntegrator.Admob.Editor;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace QuickAdMobIntegrator.Editor
 {
@@ -31,6 +31,12 @@ namespace QuickAdMobIntegrator.Editor
         {
             "Assets/GoogleMobileAds/Resources",
         };
+        static readonly IReadOnlyList<string> s_customGradlePaths = new[]
+        {
+            "Assets/Plugins/Android/gradleTemplate.properties",
+            "Assets/Plugins/Android/mainTemplate.gradle",
+            "Assets/Plugins/Android/settingsTemplate.gradle",
+        };
         
         [MenuItem("Window/Quick AdMob Integrator")]
         public static void Open() => Open(IsFirstOpen);
@@ -41,8 +47,7 @@ namespace QuickAdMobIntegrator.Editor
             window._superReload = superReload;
             window.Show();
         }
-        
-        static readonly string[] s_textureDirectories = { QAIManagerFactory.PackageRootPath };
+
         public static bool IsFirstOpen
         {
             get => SessionState.GetBool("QuickAdMobIntegrator_PackageWindow_IsFirstOpen", true);
@@ -88,7 +93,8 @@ namespace QuickAdMobIntegrator.Editor
             _helpIcon = EditorGUIUtility.IconContent("_Help");
             _completedIcon = EditorGUIUtility.IconContent("winbtn_mac_max");
             _notCompletedIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
-            _logo = GetLogo();
+            var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
+            _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/header.png");
             
             _adMobSettingsValidator = new AdMobSettingsValidator();
             _isSettingMode = false;
@@ -256,10 +262,38 @@ namespace QuickAdMobIntegrator.Editor
                             {
                                 _pathManager.DeleteAllPaths();
                                 AssetDatabase.Refresh();
+                                DeleteAndroidSdkDialog();
                             }
                         }
                     );
 
+                    GUILayout.Space(5);
+                    
+                    DrawChecklistItem(
+                        "Configure Custom Gradle (optional)",
+                        true,
+                        !_manager.IsProcessing && _pathManager.AreAllPathsDeleted,
+                        true,
+                        "Configure",
+                        () =>
+                        {
+                            SettingsService.OpenProjectSettings("Project/Player");
+                            EditorUserBuildSettings.selectedBuildTargetGroup = BuildTargetGroup.Android;
+
+                            EditorApplication.delayCall += () =>
+                            {
+                                var customContents = new CustomGradleDialogContents
+                                (
+                                    "AdMob can be used without this configuration.\nPlease configure Publishing Settings/Build referring to the image.\nWhen configured, unnecessary files won't be imported into Assets/Plugins/Android.\nThis is convenient for git management."
+                                );
+                                var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
+                                var img = AssetDatabase.LoadAssetAtPath<Texture2D>(path +
+                                    "/Editor/android_setting.jpg");
+                                CustomGradleDialog.Open(customContents, img, "Custom Gradle Configuration");
+                            };
+                        }
+                    );
+                    
                     GUILayout.Space(5);
                     
                     DrawChecklistItem(
@@ -284,7 +318,7 @@ namespace QuickAdMobIntegrator.Editor
                         _adMobSettingsValidator.IsValid,
                         !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
                         true,
-                        _adMobSettingsValidator.IsValid ? "Configured" : "Set Up",
+                        _adMobSettingsValidator.IsValid ? "Configured" : "Configure",
                         () => _adMobSettingsValidator.OpenSettings()
                     );
 
@@ -436,7 +470,29 @@ namespace QuickAdMobIntegrator.Editor
             
             GUILayout.EndScrollView();
         }
-        
+
+        void DeleteAndroidSdkDialog()
+        {
+            var path = "Assets/Plugins/Android";
+
+            if (AssetDatabase.IsValidFolder(path))
+            {
+                EditorUtility.DisplayDialog(
+                    title: "Delete SDK",
+                    message: "If there are any SDKs such as GoogleMobileAds in the Plugins/Android folder, please delete them.",
+                    ok: "OK"
+                );
+
+                var asset = AssetDatabase.LoadAssetAtPath<Object>(path);
+
+                if (asset != default)
+                {
+                    Selection.activeObject = asset;
+                    EditorGUIUtility.PingObject(asset);
+                }
+            }
+        }
+
         void ReloadPackages(bool superReload)
         {
             _superReload = false;
@@ -699,14 +755,14 @@ namespace QuickAdMobIntegrator.Editor
                 });
         }
         
-        void DrawChecklistItem(string label, bool isComplete, bool buttonActive, bool buttonHide, string buttonName, Action onClick)
+        void DrawChecklistItem(string label, bool isComplete, bool buttonActive, bool buttonShow, string buttonName, Action onClick)
         {
             var style = new GUIStyle() {padding = new RectOffset(22, 8, 0, 3)};
             GUILayout.BeginHorizontal(style);
             GUILayout.Label(isComplete ? _completedIcon : _notCompletedIcon, GUILayout.Width(15), GUILayout.Height(15));
             GUILayout.Label(label);
 
-            if (buttonHide)
+            if (buttonShow)
             {
                 EditorGUI.BeginDisabledGroup(!buttonActive || _manager.IsProcessing || _versionChecker.IsProcessing);
                 if (GUILayout.Button(buttonName, GUILayout.Width(75)))
@@ -752,8 +808,7 @@ namespace QuickAdMobIntegrator.Editor
             }
             return "v" + details.GetVersionParam();
         }
-
-
+        
         string[] GetEnablePackages()
         {
             var packages = new List<string>
@@ -790,17 +845,6 @@ namespace QuickAdMobIntegrator.Editor
                 }
             }
             return packages.ToArray();
-        }
-        
-        static Texture2D GetLogo()
-        {
-            var guids = AssetDatabase.FindAssets("t:Texture2D header", s_textureDirectories);
-            foreach (var guid in guids)
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            }
-            return default;
         }
     }
 }
