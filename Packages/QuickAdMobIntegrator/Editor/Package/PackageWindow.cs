@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using QuickAdMobIntegrator.Admob.Editor;
 using UnityEditor;
@@ -30,12 +31,6 @@ namespace QuickAdMobIntegrator.Editor
         static readonly IReadOnlyList<string> s_admobExcludePaths = new[]
         {
             "Assets/GoogleMobileAds/Resources",
-        };
-        static readonly IReadOnlyList<string> s_customGradlePaths = new[]
-        {
-            "Assets/Plugins/Android/gradleTemplate.properties",
-            "Assets/Plugins/Android/mainTemplate.gradle",
-            "Assets/Plugins/Android/settingsTemplate.gradle",
         };
         
         [MenuItem("Window/Quick AdMob Integrator")]
@@ -262,7 +257,6 @@ namespace QuickAdMobIntegrator.Editor
                             {
                                 _pathManager.DeleteAllPaths();
                                 AssetDatabase.Refresh();
-                                DeleteAndroidSdkDialog();
                             }
                         }
                     );
@@ -284,7 +278,11 @@ namespace QuickAdMobIntegrator.Editor
                             {
                                 var customContents = new CustomGradleDialogContents
                                 (
-                                    "AdMob can be used without this configuration.\nPlease configure Publishing Settings/Build referring to the image.\nWhen configured, unnecessary files won't be imported into Assets/Plugins/Android.\nThis is convenient for git management."
+                                    "AdMob can be used without this configuration.\nPlease configure Publishing Settings/Build referring to the image.\nWhen configured, unnecessary files won't be imported into Assets/Plugins/Android.\nThis is convenient for git management.",
+                                    () =>
+                                    {
+                                        EditorApplication.delayCall += DeleteAndroidSdkDialogIfNeeded;
+                                    }
                                 );
                                 var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
                                 var img = AssetDatabase.LoadAssetAtPath<Texture2D>(path +
@@ -471,25 +469,28 @@ namespace QuickAdMobIntegrator.Editor
             GUILayout.EndScrollView();
         }
 
-        void DeleteAndroidSdkDialog()
+        void DeleteAndroidSdkDialogIfNeeded()
         {
             var path = "Assets/Plugins/Android";
 
-            if (AssetDatabase.IsValidFolder(path))
+            if (!AssetDatabase.IsValidFolder(path)
+                || !File.Exists("Assets/Plugins/Android/mainTemplate"))
             {
-                EditorUtility.DisplayDialog(
-                    title: "Delete SDK",
-                    message: "If there are any SDKs such as GoogleMobileAds in the Plugins/Android folder, please delete them.",
-                    ok: "OK"
-                );
+                return;
+            }
+            
+            EditorUtility.DisplayDialog(
+                title: "Delete SDK",
+                message: "If you have configured Custom Gradle, the SDK files that AdMob downloads to Plugins/Android are unnecessary and should be deleted to avoid build conflicts.",
+                ok: "OK"
+            );
 
-                var asset = AssetDatabase.LoadAssetAtPath<Object>(path);
+            var asset = AssetDatabase.LoadAssetAtPath<Object>(path);
 
-                if (asset != default)
-                {
-                    Selection.activeObject = asset;
-                    EditorGUIUtility.PingObject(asset);
-                }
+            if (asset != default)
+            {
+                Selection.activeObject = asset;
+                EditorGUIUtility.PingObject(asset);
             }
         }
 
