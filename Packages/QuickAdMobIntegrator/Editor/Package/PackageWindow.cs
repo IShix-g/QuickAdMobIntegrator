@@ -60,6 +60,7 @@ namespace QuickAdMobIntegrator.Editor
         GUIContent _settingIcon;
         GUIContent _backIcon;
         GUIContent _helpIcon;
+        GUIContent _helpHeader;
         GUIContent _completedIcon;
         GUIContent _notCompletedIcon;
         Texture2D _logo;
@@ -85,6 +86,7 @@ namespace QuickAdMobIntegrator.Editor
             _refreshIcon = EditorGUIUtility.IconContent("Refresh");
             _settingIcon = EditorGUIUtility.IconContent("Settings");
             _backIcon = EditorGUIUtility.IconContent("back");
+            _helpHeader = EditorGUIUtility.IconContent("Help");
             _helpIcon = EditorGUIUtility.IconContent("_Help");
             _completedIcon = EditorGUIUtility.IconContent("winbtn_mac_max");
             _notCompletedIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
@@ -120,6 +122,7 @@ namespace QuickAdMobIntegrator.Editor
             _backIcon = default;
             _helpIcon = default;
             _logo = default;
+            _helpHeader = default;
             _tokenSource?.SafeCancelAndDispose();
             _mediationTokenSource?.SafeCancelAndDispose();
             IsShowSetUpFoldout = _isShowSetUpFoldout;
@@ -143,8 +146,8 @@ namespace QuickAdMobIntegrator.Editor
                 var settingIcon = _isSettingMode ? _backIcon : _settingIcon;
                 var clickedOpenSetting = GUILayout.Button(settingIcon, width, height);
                 var clickedStartReload = GUILayout.Button(_refreshIcon, width, height);
+                var clickedGitHub = GUILayout.Button(_helpHeader, width, height);
                 var clickedOpenManager = GUILayout.Button("Package Manager", height);
-                var clickedGitHub = GUILayout.Button("GitHub page", height);
                 var pluginVersion = _versionChecker.IsLoaded ? _versionChecker.LocalInfo.VersionString : "---";
                 var clickedVersion = GUILayout.Button(pluginVersion, height);
 
