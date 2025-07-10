@@ -144,8 +144,9 @@ namespace QuickAdMobIntegrator.Editor
                 var clickedOpenSetting = GUILayout.Button(settingIcon, width, height);
                 var clickedStartReload = GUILayout.Button(_refreshIcon, width, height);
                 var clickedOpenManager = GUILayout.Button("Package Manager", height);
+                var clickedGitHub = GUILayout.Button("GitHub page", height);
                 var pluginVersion = _versionChecker.IsLoaded ? _versionChecker.LocalInfo.VersionString : "---";
-                var clickedVersion = GUILayout.Button(pluginVersion, GUILayout.Width(100), height);
+                var clickedVersion = GUILayout.Button(pluginVersion, height);
 
                 GUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
@@ -170,10 +171,13 @@ namespace QuickAdMobIntegrator.Editor
                     _isSettingMode = false;
                     PackageInstaller.OpenPackageManager();
                 }
+                else if (clickedGitHub)
+                {
+                    Application.OpenURL(_gitURL);
+                }
                 else if (_versionChecker.IsLoaded
                          && clickedVersion)
                 {
-                    _tokenSource = new CancellationTokenSource();
                     _versionChecker.Fetch()
                         .ContinueOnMainThread(task =>
                         {
