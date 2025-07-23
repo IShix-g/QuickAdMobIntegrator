@@ -34,12 +34,9 @@ namespace QuickAdMobIntegrator.Editor
         };
         
         [MenuItem("Window/Quick AdMob Integrator")]
-        public static void Open() => Open(IsFirstOpen);
-        
-        public static void Open(bool superReload)
+        public static void Open()
         {
             var window = GetWindow<PackageWindow>("Quick AdMob Integrator");
-            window._superReload = superReload;
             window.Show();
         }
 
@@ -75,7 +72,6 @@ namespace QuickAdMobIntegrator.Editor
         readonly PackageVersionChecker _versionChecker = new (_gitInstallUrl, _gitBranchName, _packageName);
         readonly PathManager _pathManager = new (s_admobPaths, s_admobExcludePaths);
         bool _isSettingMode;
-        bool _superReload;
         bool _isShowSetUpFoldout;
         bool _isUpdated;
 
@@ -92,13 +88,9 @@ namespace QuickAdMobIntegrator.Editor
             _notCompletedIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
             var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
             _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/header.png");
-            
             _adMobSettingsValidator = new AdMobSettingsValidator();
             _isSettingMode = false;
-            _superReload = false;
-            IsFirstOpen = false;
             _isShowSetUpFoldout = IsShowSetUpFoldout;
-            
             EditorApplication.delayCall += Initialize;
         }
 
@@ -107,7 +99,8 @@ namespace QuickAdMobIntegrator.Editor
             _manager = QAIManagerFactory.Create();
             if (_manager.IsCompletedRegistrySetUp)
             {
-                ReloadPackages(_superReload);
+                ReloadPackages(IsFirstOpen);
+                IsFirstOpen = false;
             }
             _versionChecker.Fetch().Handled();
         }
@@ -123,6 +116,8 @@ namespace QuickAdMobIntegrator.Editor
             _helpIcon = default;
             _logo = default;
             _helpHeader = default;
+            _completedIcon = default;
+            _logo = default;
             _tokenSource?.SafeCancelAndDispose();
             _mediationTokenSource?.SafeCancelAndDispose();
             IsShowSetUpFoldout = _isShowSetUpFoldout;
