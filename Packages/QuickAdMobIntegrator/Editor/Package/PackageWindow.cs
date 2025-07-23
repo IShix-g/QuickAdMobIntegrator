@@ -498,7 +498,6 @@ namespace QuickAdMobIntegrator.Editor
 
         void ReloadPackages(bool superReload)
         {
-            _superReload = false;
             _adMobSettingsValidator.Validate();
             
             _tokenSource = new CancellationTokenSource();
