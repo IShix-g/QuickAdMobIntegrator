@@ -266,7 +266,35 @@ namespace QuickAdMobIntegrator.Editor
                     GUILayout.Space(5);
                     
                     DrawChecklistItem(
-                        "Configure Custom Gradle (optional)",
+                        $"Install {_googleAdsPackageInfo.Remote.DisplayName} first.",
+                        _googleAdsPackageInfo.IsInstalled,
+                        !_manager.IsProcessing && _pathManager.AreAllPathsDeleted && !_googleAdsPackageInfo.IsInstalled,
+                        !_googleAdsPackageInfo.IsInstalled,
+                        _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
+                        () =>
+                        {
+                            if (!_googleAdsPackageInfo.IsInstalled)
+                            {
+                                InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
+                            }
+                        }
+                    );
+
+                    GUILayout.Space(5);
+                    
+                    DrawChecklistItem(
+                        "Set up the Google Mobile Ads App ID", 
+                        _adMobSettingsValidator.IsValid,
+                        !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
+                        true,
+                        _adMobSettingsValidator.IsValid ? "Configured" : "Configure",
+                        () => _adMobSettingsValidator.OpenSettings()
+                    );
+
+                    GUILayout.Space(5);
+                    
+                    DrawChecklistItem(
+                        "(Optional) Configure Custom Gradle",
                         true,
                         !_manager.IsProcessing && _pathManager.AreAllPathsDeleted,
                         true,
@@ -294,34 +322,6 @@ namespace QuickAdMobIntegrator.Editor
                         }
                     );
                     
-                    GUILayout.Space(5);
-                    
-                    DrawChecklistItem(
-                        $"Install {_googleAdsPackageInfo.Remote.DisplayName} first.",
-                        _googleAdsPackageInfo.IsInstalled,
-                        !_manager.IsProcessing && _pathManager.AreAllPathsDeleted && !_googleAdsPackageInfo.IsInstalled,
-                        !_googleAdsPackageInfo.IsInstalled,
-                        _googleAdsPackageInfo.IsInstalled ? "Installed" : "Install",
-                        () =>
-                        {
-                            if (!_googleAdsPackageInfo.IsInstalled)
-                            {
-                                InstallPackage(_googleAdsPackageInfo.PackageInstallUrl);
-                            }
-                        }
-                    );
-
-                    GUILayout.Space(5);
-            
-                    DrawChecklistItem(
-                        "Set up the Google Mobile Ads App ID", 
-                        _adMobSettingsValidator.IsValid,
-                        !_manager.IsProcessing && _googleAdsPackageInfo.IsInstalled,
-                        true,
-                        _adMobSettingsValidator.IsValid ? "Configured" : "Configure",
-                        () => _adMobSettingsValidator.OpenSettings()
-                    );
-
                     GUILayout.Space(20);
                 }
             }
