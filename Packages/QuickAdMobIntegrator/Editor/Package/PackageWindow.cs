@@ -84,8 +84,20 @@ namespace QuickAdMobIntegrator.Editor
             _backIcon = EditorGUIUtility.IconContent("back");
             _helpHeader = EditorGUIUtility.IconContent("Help");
             _helpIcon = EditorGUIUtility.IconContent("_Help");
-            _completedIcon = EditorGUIUtility.IconContent("winbtn_mac_max");
-            _notCompletedIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
+            _completedIcon = EditorGUIUtility.IconContent(
+#if UNITY_2023_1_OR_NEWER
+                "d_greencheckmark"
+#else
+                "winbtn_mac_max"
+#endif
+                );
+            _notCompletedIcon = EditorGUIUtility.IconContent(
+#if UNITY_2023_1_OR_NEWER
+                "d_invalid"
+#else
+                "winbtn_mac_close"
+#endif
+                );
             var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
             _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/header.png");
             _adMobSettingsValidator = new AdMobSettingsValidator();
