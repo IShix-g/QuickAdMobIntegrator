@@ -30,6 +30,7 @@ namespace QuickAdMobIntegrator.Editor
         };
         static readonly IReadOnlyList<string> s_admobExcludePaths = new[]
         {
+            "Assets/GoogleMobileAds/link.xml",
             "Assets/GoogleMobileAds/Resources",
         };
         
