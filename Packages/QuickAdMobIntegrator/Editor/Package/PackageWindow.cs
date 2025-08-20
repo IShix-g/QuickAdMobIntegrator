@@ -361,7 +361,7 @@ namespace QuickAdMobIntegrator.Editor
                 
                 if (!_isSettingMode)
                 {
-                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_pathManager.AreAllPathsDeleted || !_googleAdsPackageInfo.IsInstalled || _versionChecker.IsProcessing);
+                    EditorGUI.BeginDisabledGroup(_manager.IsProcessing || !_googleAdsPackageInfo.IsInstalled || _versionChecker.IsProcessing);
                     if (GUILayout.Button("Install All", GUILayout.Width(70)))
                     {
                         var userAgreed = EditorUtility.DisplayDialog(
@@ -686,7 +686,7 @@ namespace QuickAdMobIntegrator.Editor
                 {
                     var versions = details.Remote.Versions;
                     var pool = ArrayPool<string>.Shared;
-                    var array = pool.Rent(versions.Length);
+                    var array = pool.Rent(versions.Length + 1);
 
                     try
                     {
