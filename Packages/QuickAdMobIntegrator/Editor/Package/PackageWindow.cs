@@ -238,7 +238,37 @@ namespace QuickAdMobIntegrator.Editor
             
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Width(position.width));
             
-            if (!_isSettingMode)
+            if (_isSettingMode)
+            {
+                EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
+                if (GUILayout.Button("Remove all installed packages.", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
+                {
+                    var userAgreed = EditorUtility.DisplayDialog(
+                        "Remove All",
+                        "Remove all installed SDKs and Mediations listed.",
+                        "Remove All",
+                        "Close"
+                    );
+
+                    if (userAgreed)
+                    {
+                        var packages = GetInstalledPackages();
+                        if (packages.Length > 0)
+                        {
+                            _tokenSource = new CancellationTokenSource();
+                            _manager.Installer.UnInstall(packages, _tokenSource.Token)
+                                .Handled(_ =>
+                                {
+                                    _tokenSource?.Dispose();
+                                    _tokenSource = default;
+                                });
+                        }
+                    }
+                }
+                EditorGUI.EndDisabledGroup();
+                GUILayout.Space(10);
+            }
+            else
             {
                 GUILayout.Space(10);
                 var style = new GUIStyle(EditorStyles.foldout)
@@ -416,37 +446,6 @@ namespace QuickAdMobIntegrator.Editor
                 }
             }
             
-            if (_isSettingMode)
-            {
-                EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
-                GUILayout.Space(20);
-                if (GUILayout.Button("Remove all installed packages.", GUILayout.ExpandWidth(true), GUILayout.Height(30)))
-                {
-                    var userAgreed = EditorUtility.DisplayDialog(
-                        "Remove All",
-                        "Remove all installed SDKs and Mediations listed.",
-                        "Remove All",
-                        "Close"
-                    );
-
-                    if (userAgreed)
-                    {
-                        var packages = GetInstalledPackages();
-                        if (packages.Length > 0)
-                        {
-                            _tokenSource = new CancellationTokenSource();
-                            _manager.Installer.UnInstall(packages, _tokenSource.Token)
-                                .Handled(_ =>
-                                {
-                                    _tokenSource?.Dispose();
-                                    _tokenSource = default;
-                                });
-                        }
-                    }
-                }
-                EditorGUI.EndDisabledGroup();
-            }
-            else
             {
                 var boxStyle = new GUIStyle()
                 {
