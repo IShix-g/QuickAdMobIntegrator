@@ -686,7 +686,7 @@ namespace QuickAdMobIntegrator.Editor
                 {
                     var versions = details.Remote.Versions;
                     var pool = ArrayPool<string>.Shared;
-                    var array = pool.Rent(versions.Length);
+                    var array = pool.Rent(versions.Length + 1);
 
                     try
                     {
