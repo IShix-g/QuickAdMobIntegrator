@@ -672,14 +672,19 @@ namespace QuickAdMobIntegrator.Editor
                         versionText += " (Fixed)";
                     }
                     
-                    var color = GUI.color;
-                    if (details.IsInstalled
-                        && details.HasUpdate)
+                    var style = new GUIStyle(EditorStyles.label);
+                    if (details.IsInstalled)
                     {
-                        GUI.color = Color.yellow;
+                        if (details.HasUpdate)
+                        {
+                            style.normal.textColor = EditorGUIUtility.isProSkin ? Color.yellow : Color.red;
+                        }
                     }
-                    GUILayout.Label(versionText);
-                    GUI.color = color;
+                    else if (details.IsFixedVersion)
+                    {
+                        style.normal.textColor = Color.gray;
+                    }
+                    GUILayout.Label(versionText, style);
                 }
                 else if(details.IsLoaded)
                 {
