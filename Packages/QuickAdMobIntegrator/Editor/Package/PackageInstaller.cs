@@ -75,6 +75,7 @@ namespace QuickAdMobIntegrator.Editor
         
         public async Task<PackageCollection> Install(string[] packageIds, CancellationToken token = default, bool showProgressBar = true)
         {
+            IsProcessing = true;
             var op = _pool.Get();
             var infos = ListPool<PackageInfo>.Get();
             var specifiedVersions = ListPool<string>.Get();
@@ -100,7 +101,6 @@ namespace QuickAdMobIntegrator.Editor
                     EditorUtility.DisplayProgressBar("Package operations", "Resolving Dependence Packages.", 0.5f);
                 }
                 
-                IsProcessing = true;
                 var request = Client.AddAndRemove(packageIds);
                 _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
                 await op.StartAsync(() => request.IsCompleted, _tokenSource.Token);
