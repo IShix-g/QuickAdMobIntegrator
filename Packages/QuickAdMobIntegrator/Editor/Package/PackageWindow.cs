@@ -412,6 +412,7 @@ namespace QuickAdMobIntegrator.Editor
                                     {
                                         _tokenSource?.Dispose();
                                         _tokenSource = default;
+                                        ReloadPackages(false);
                                     });
                             }
                         }
