@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -12,11 +13,11 @@ namespace QuickAdMobIntegrator.Editor
     internal sealed class PackageVersionChecker : IDisposable
     {
         public const string PackageJsonFileName = "package.json";
-        
+
         public readonly string GitInstallUrl;
         public readonly string BranchName;
         public readonly string PackageName;
-        
+
         public bool IsProcessing => _isNowLoading || _packageInstaller.IsProcessing;
         public bool IsLoaded => ServerInfo != default && LocalInfo != default;
         public PackageJson ServerInfo { get; private set; }
@@ -26,14 +27,14 @@ namespace QuickAdMobIntegrator.Editor
         bool _isDisposed;
         CancellationTokenSource _tokenSource;
         bool _isNowLoading;
-        
+
         public sealed class PackageJson
         {
             public string name;
             public string version;
             public string VersionString => !string.IsNullOrEmpty(version) ? "v" + version : "v---";
         }
-        
+
         public PackageVersionChecker(string gitInstallUrl, string branchName, string packageName)
         {
             GitInstallUrl = gitInstallUrl;
@@ -52,14 +53,15 @@ namespace QuickAdMobIntegrator.Editor
             var server = new Version(LocalInfo.version);
             return current.CompareTo(server) > 0;
         }
-        
+
         public async Task Fetch()
         {
             _isNowLoading = true;
-            var gitPackageJsonUrl = ToRawPackageJsonURL(GitInstallUrl, BranchName);
+            var version = await GetVersionOrBranchFromPackageID(PackageName);
+            var branchName = string.IsNullOrEmpty(version) ? BranchName : version;
+            var gitPackageJsonUrl = ToRawPackageJsonURL(GitInstallUrl, branchName);
             var request = UnityWebRequest.Get(gitPackageJsonUrl);
-            request.timeout = 30;
-            
+
             try
             {
                 await request.SendWebRequest();
@@ -84,7 +86,7 @@ namespace QuickAdMobIntegrator.Editor
             var rootUrl = ToRawPackageRootURL(packageInstallUrl, branch);
             return rootUrl + "/" + PackageJsonFileName;
         }
-        
+
         public static string ToRawPackageRootURL(string packageInstallUrl, string branch)
         {
             if (!packageInstallUrl.StartsWith("https://github.com")
@@ -93,7 +95,7 @@ namespace QuickAdMobIntegrator.Editor
             {
                 throw new ArgumentException("Specify the URL of GitHub, Bitbucket, or GitLab. : " + packageInstallUrl, nameof(packageInstallUrl));
             }
-            
+
             var uri = new Uri(packageInstallUrl);
             var pathWithoutFileName = uri.AbsolutePath;
             if (pathWithoutFileName.EndsWith(".git"))
@@ -124,7 +126,7 @@ namespace QuickAdMobIntegrator.Editor
             }
             return string.Empty;
         }
-        
+
         public PackageJson GetLocalInfo(string packageName)
         {
             var path = "Packages/" + packageName + "/package.json";
@@ -144,10 +146,10 @@ namespace QuickAdMobIntegrator.Editor
                     localVersion + " -> " + serverVersion, "There is a newer version " + serverVersion + ".",
                     "Update",
                     "Close");
-                        
+
                 if (isOpen)
                 {
-                    _packageInstaller.Install(new []{ GitInstallUrl }, _tokenSource.Token).Handled();
+                    _packageInstaller.Install(new [] { GitInstallUrl }, _tokenSource.Token).Handled();
                 }
             }
             else
@@ -159,7 +161,28 @@ namespace QuickAdMobIntegrator.Editor
                 );
             }
         }
-        
+
+        static async Task<string> GetVersionOrBranchFromPackageID(string packageId)
+        {
+            var request = Client.List();
+            var op = new EditorAsync();
+            await op.StartAsync(() => request.IsCompleted);
+            foreach (var result in request.Result)
+            {
+                if (!result.packageId.Contains(packageId))
+                {
+                    continue;
+                }
+                var index = result.packageId.IndexOf('#');
+                if (index != -1)
+                {
+                    return result.packageId.Substring(index + 1);
+                }
+                break;
+            }
+            return string.Empty;
+        }
+
         public void Dispose()
         {
             if (_isDisposed)
