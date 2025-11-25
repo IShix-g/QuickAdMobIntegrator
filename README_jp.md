@@ -19,7 +19,7 @@ UnityのGoogle AdMob統合を簡素化し、モバイル広告のシームレス
 "Unity Editor : Window > Package Manager > Add package from git URL...".
 
 ```
-https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobIntegrator
+https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobIntegrator#v1
 ```
 
 ![add package](Docs/add_package.png)

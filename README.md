@@ -21,7 +21,7 @@ Simplify the integration of Google AdMob into Unity and seamlessly set up mobile
 Go to `Unity Editor: Window > Package Manager > Add package from git URL...`.
 
 ```
-https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobIntegrator
+https://github.com/IShix-g/QuickAdMobIntegrator.git?path=Packages/QuickAdMobIntegrator#v1
 ```
 
 ![add package](Docs/add_package.png)
