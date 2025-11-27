@@ -1,4 +1,4 @@
-![Unity](https://img.shields.io/badge/Unity-2021.3%2B-black)
+![Unity](https://img.shields.io/badge/Unity-2022.3%2B-black)
 
 > [!IMPORTANT]
 > 免責事項：Quick AdMob Integratorはオープンソースのサービスであり、Unity Technologies Inc. Google Inc.が提供する公式のサービスではありません。また、レジストリにOpen UPMを利用しますが、Open UPMが提供するサービスでもありません。
