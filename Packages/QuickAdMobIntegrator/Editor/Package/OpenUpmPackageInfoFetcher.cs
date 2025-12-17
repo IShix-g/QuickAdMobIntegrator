@@ -37,7 +37,7 @@ namespace QuickAdMobIntegrator.Editor
             try
             {
                 IsProcessing = true;
-                
+
                 _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
                 info = await _installer.GetInfoByPackageId(name, _tokenSource.Token);
                 var local = info != default
@@ -48,7 +48,7 @@ namespace QuickAdMobIntegrator.Editor
                         DisplayName = info.displayName
                     }
                     : default;
-                
+
                 var server = default(PackageRemoteInfo);
                 var fileNameFromUrl = GenerateFileNameFromUrl(openUpmPackageInfoUrl);
                 if (!supperReload)
@@ -64,8 +64,13 @@ namespace QuickAdMobIntegrator.Editor
                         await SavePackageInfoToCache(fileNameFromUrl, server, token);
                     }
                 }
-                
+
                 return new PackageInfoDetails(local, server, name);
+            }
+            catch (OperationCanceledException ex)
+            {
+                Debug.LogWarning("Task was canceled. Exception: " + ex.Message);
+                return null;
             }
             catch (Exception ex)
             {
