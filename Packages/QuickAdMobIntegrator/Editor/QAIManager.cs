@@ -63,7 +63,7 @@ namespace QuickAdMobIntegrator.Editor
 
                     var index = i;
                     tasks[i] = _fetcher.FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, token);
-                    tasks[i].Handled(task =>
+                    tasks[i].ContinueOnMainThread(task =>
                     {
                         var details = task.Result;
                         var displayName = details.Remote.DisplayName;
@@ -72,7 +72,7 @@ namespace QuickAdMobIntegrator.Editor
                                                         .Replace("Mediation", string.Empty)
                                                         .Replace("for Unity", string.Empty);
                         onLoadedAction?.Invoke(index, task.Result);
-                    });
+                    }, cancellationToken: token);
                 }
                 await Task.WhenAll(tasks);
             }

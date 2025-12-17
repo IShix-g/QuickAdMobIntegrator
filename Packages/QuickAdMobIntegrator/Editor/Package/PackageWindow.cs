@@ -408,7 +408,7 @@ namespace QuickAdMobIntegrator.Editor
                             {
                                 _tokenSource = new CancellationTokenSource();
                                 _manager.Installer.Install(packages, _tokenSource.Token)
-                                    .Handled(_ =>
+                                    .ContinueOnMainThread(_ =>
                                     {
                                         _tokenSource?.Dispose();
                                         _tokenSource = default;
@@ -515,7 +515,7 @@ namespace QuickAdMobIntegrator.Editor
             
             _tokenSource = new CancellationTokenSource();
             _manager.FetchGoogleAdsPackageInfo(superReload, _tokenSource.Token)
-                .Handled(task =>
+                .ContinueOnMainThread(task =>
                 {
                     _googleAdsPackageInfo = task.Result;
                     _tokenSource?.Dispose();
