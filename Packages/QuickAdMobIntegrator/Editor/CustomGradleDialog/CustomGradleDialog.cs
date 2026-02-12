@@ -13,8 +13,8 @@ namespace QuickAdMobIntegrator.Editor
         public static void Open(CustomGradleDialogContents contents, Texture2D logo = default, string dialogTitle = default)
         {
             var window = GetWindow<CustomGradleDialog>(dialogTitle);
-            window.minSize = new Vector2(480, 800);
-            window.maxSize = new Vector2(480, 800);
+            window.minSize = new Vector2(480, 400);
+            window.maxSize = new Vector2(480, 870);
             window._contents = contents;
             window._logo = logo;
             window.ShowUtility();
@@ -34,6 +34,9 @@ namespace QuickAdMobIntegrator.Editor
                 Close();
                 return;
             }
+            
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+            
             if(_logo != default)
             {
                 var style = new GUIStyle(GUI.skin.label)
@@ -41,9 +44,9 @@ namespace QuickAdMobIntegrator.Editor
                     padding = new RectOffset(5, 5, 5, 0),
                     alignment = TextAnchor.MiddleCenter,
                 };
-                GUILayout.Label(_logo, style, GUILayout.ExpandWidth(true), GUILayout.Height(700));
+                GUILayout.Label(_logo, style, GUILayout.Width(470), GUILayout.Height(700));
             }
-
+            
             {
                 var style = new GUIStyle()
                 {
@@ -52,8 +55,17 @@ namespace QuickAdMobIntegrator.Editor
             
                 GUILayout.BeginVertical(style);
                 GUILayout.Label(_contents.Message, EditorStyles.wordWrappedLabel);
+                GUILayout.Space(10);
+                if (GUILayout.Button("Open Project Settings (Android)"))
+                {
+                    SettingsService.OpenProjectSettings("Project/Player");
+                    EditorUserBuildSettings.selectedBuildTargetGroup = BuildTargetGroup.Android;
+                    EditorApplication.delayCall += Focus;
+                }
                 GUILayout.EndVertical();
             }
+            
+            EditorGUILayout.EndScrollView();
         }
     }
 }
