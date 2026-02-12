@@ -344,9 +344,6 @@ namespace QuickAdMobIntegrator.Editor
                         "Configure",
                         () =>
                         {
-                            SettingsService.OpenProjectSettings("Project/Player");
-                            EditorUserBuildSettings.selectedBuildTargetGroup = BuildTargetGroup.Android;
-
                             EditorApplication.delayCall += () =>
                             {
                                 var customContents = new CustomGradleDialogContents
@@ -358,8 +355,7 @@ namespace QuickAdMobIntegrator.Editor
                                     }
                                 );
                                 var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
-                                var img = AssetDatabase.LoadAssetAtPath<Texture2D>(path +
-                                    "/Editor/android_setting.jpg");
+                                var img = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/android_setting.jpg");
                                 CustomGradleDialog.Open(customContents, img, "Custom Gradle Configuration");
                             };
                         }
