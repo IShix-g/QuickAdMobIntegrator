@@ -46,7 +46,7 @@ namespace Test
         {
             var manager = QAIManagerFactory.Create();
             manager.SetUpRegistry();
-            manager.FetchGoogleAdsPackageInfo(true)
+            manager.FetchGoogleAdsPackageInfo(true, installedPackages: default)
                 .Handled(task => Debug.Log(task.Result.Remote.Name + " " + task.Result.Remote.LatestVersion));
         }
 
