@@ -13,12 +13,12 @@ namespace QuickAdMobIntegrator.Editor
         public PackageSettings Settings { get; }
         public bool IsProcessing => Installer.IsProcessing
                                     || _fetcher.IsProcessing
-                                    || _isProcessingMediation;
+                                    || System.Threading.Volatile.Read(ref _activeMediationCount) > 0;
         public bool IsCompletedRegistrySetUp { get; private set; }
 
         readonly OpenUpmPackageInfoFetcher _fetcher;
         bool _isDisposed;
-        bool _isProcessingMediation;
+        int _activeMediationCount;
 
         public QAIManager(
             PackageInstaller installer,
@@ -44,13 +44,48 @@ namespace QuickAdMobIntegrator.Editor
         public async Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(
             bool superReload,
             IEnumerable<PackageInfo> installedPackages,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            Action<PackageInfoDetails> onCacheLoaded = default,
+            Action<PackageInfoDetails> onLoaded = default)
         {
             var url = Settings.AdmobScope.OpenUpmInfoUrl;
-            var details = await _fetcher.FetchPackageInfo(url, superReload, installedPackages, token);
-            var displayName = details.Remote.DisplayName;
-            details.Remote.DisplayName = displayName.Replace("for Unity", string.Empty);
+            var synchronizationContext = SynchronizationContext.Current;
+            var details = await _fetcher.FetchPackageInfo(
+                url,
+                superReload,
+                installedPackages,
+                token,
+                cachedDetails =>
+                {
+                    PrepareGoogleAdsDetails(cachedDetails);
+                    InvokeOnMainThread(synchronizationContext, () => onCacheLoaded?.Invoke(cachedDetails));
+                });
+            PrepareGoogleAdsDetails(details);
+            InvokeOnMainThread(synchronizationContext, () => onLoaded?.Invoke(details));
             return details;
+        }
+
+        static void InvokeOnMainThread(SynchronizationContext context, Action action)
+        {
+            if (action == default)
+            {
+                return;
+            }
+            if (context == default || SynchronizationContext.Current == context)
+            {
+                action();
+                return;
+            }
+            context.Post(_ => action(), default);
+        }
+
+        static void PrepareGoogleAdsDetails(PackageInfoDetails details)
+        {
+            if (details?.Remote == default)
+            {
+                return;
+            }
+            details.Remote.DisplayName = (details.Remote.DisplayName ?? string.Empty).Replace("for Unity", string.Empty);
         }
 
         public async Task FetchMediationPackage(
@@ -59,9 +94,10 @@ namespace QuickAdMobIntegrator.Editor
             IEnumerable<PackageInfo> installedPackages,
             CancellationToken token = default)
         {
-            _isProcessingMediation = true;
+            System.Threading.Interlocked.Increment(ref _activeMediationCount);
             try
             {
+                var synchronizationContext = SynchronizationContext.Current;
                 var tasks = new Task<PackageInfoDetails>[Settings.MediationScopes.Length];
                 for (var i = 0; i < Settings.MediationScopes.Length; i++)
                 {
@@ -71,24 +107,41 @@ namespace QuickAdMobIntegrator.Editor
                     }
 
                     var index = i;
-                    tasks[i] = _fetcher.FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, installedPackages, token);
+                    tasks[i] = _fetcher.FetchPackageInfo(
+                        Settings.MediationScopes[i].OpenUpmInfoUrl,
+                        superReload,
+                        installedPackages,
+                        token,
+                        cachedDetails =>
+                        {
+                            PrepareMediationDetails(cachedDetails);
+                            InvokeOnMainThread(synchronizationContext, () => onLoadedAction?.Invoke(index, cachedDetails));
+                        });
                     tasks[i].ContinueOnMainThread(task =>
                     {
                         var details = task.Result;
-                        var displayName = details.Remote.DisplayName;
-                        details.Remote.DisplayName = displayName
-                                                        .Replace("Google Mobile Ads", string.Empty)
-                                                        .Replace("Mediation", string.Empty)
-                                                        .Replace("for Unity", string.Empty);
-                        onLoadedAction?.Invoke(index, task.Result);
-                    }, cancellationToken: token);
+                        PrepareMediationDetails(details);
+                        onLoadedAction?.Invoke(index, details);
+                    }, onCancel: () => { }, cancellationToken: token);
                 }
                 await Task.WhenAll(tasks);
             }
             finally
             {
-                _isProcessingMediation = false;
+                System.Threading.Interlocked.Decrement(ref _activeMediationCount);
             }
+        }
+
+        static void PrepareMediationDetails(PackageInfoDetails details)
+        {
+            if (details?.Remote == default)
+            {
+                return;
+            }
+            details.Remote.DisplayName = (details.Remote.DisplayName ?? string.Empty)
+                                        .Replace("Google Mobile Ads", string.Empty)
+                                        .Replace("Mediation", string.Empty)
+                                        .Replace("for Unity", string.Empty);
         }
 
         public void Dispose()

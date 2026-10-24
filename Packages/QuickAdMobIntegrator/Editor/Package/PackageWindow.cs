@@ -69,7 +69,8 @@ namespace QuickAdMobIntegrator.Editor
         PackageInfoDetails _googleAdsPackageInfo;
         CancellationTokenSource _tokenSource;
         PackageInfoDetails[] _mediationPackageInfos;
-        CancellationTokenSource _mediationTokenSource;
+        CancellationTokenSource _reloadTokenSource;
+        int _reloadGeneration;
         AdMobSettingsValidator _adMobSettingsValidator;
         readonly PackageVersionChecker _versionChecker = new (_gitInstallUrl, _gitBranchName, _packageName);
         readonly PathManager _pathManager = new (s_admobPaths, s_admobExcludePaths);
@@ -113,7 +114,7 @@ namespace QuickAdMobIntegrator.Editor
             _manager = QAIManagerFactory.Create();
             if (_manager.IsCompletedRegistrySetUp)
             {
-                ReloadPackages(IsFirstOpen);
+                ReloadPackages(!IsFirstOpen);
                 IsFirstOpen = false;
             }
             _versionChecker.Fetch().Handled();
@@ -121,6 +122,8 @@ namespace QuickAdMobIntegrator.Editor
 
         void OnDisable()
         {
+            _reloadGeneration++;
+            _reloadTokenSource?.Cancel();
             _manager?.Dispose();
             _installedIcon = default;
             _updateIcon = default;
@@ -133,7 +136,6 @@ namespace QuickAdMobIntegrator.Editor
             _completedIcon = default;
             _logo = default;
             _tokenSource?.SafeCancelAndDispose();
-            _mediationTokenSource?.SafeCancelAndDispose();
             IsShowSetUpFoldout = _isShowSetUpFoldout;
             _versionChecker?.Dispose();
         }
@@ -230,10 +232,19 @@ namespace QuickAdMobIntegrator.Editor
             
             GUILayout.Space(5);
             
-            if (_googleAdsPackageInfo == default
-                || _manager.IsProcessing)
+            if (_googleAdsPackageInfo == default)
             {
                 GUILayout.Label("Now Loading...");
+                if (_mediationPackageInfos != default)
+                {
+                    foreach (var packageInfo in _mediationPackageInfos)
+                    {
+                        if (packageInfo is { IsLoaded: true })
+                        {
+                            DrawPackage(packageInfo, isSettingMode: _isSettingMode, isActiveButton: false);
+                        }
+                    }
+                }
                 return;
             }
             
@@ -510,59 +521,87 @@ namespace QuickAdMobIntegrator.Editor
         {
             _adMobSettingsValidator.Validate();
 
-            _tokenSource = new CancellationTokenSource();
-            _manager.Installer.GetInfos(_tokenSource.Token)
-                .ContinueOnMainThread(task =>
-                {
-                    var installedPackages = task.Result.ToArray();
-                    _manager.FetchGoogleAdsPackageInfo(superReload, installedPackages, _tokenSource.Token)
-                        .ContinueOnMainThread(task =>
-                        {
-                            _googleAdsPackageInfo = task.Result;
-                            _tokenSource?.Dispose();
-                            _tokenSource = default;
-                            Repaint();
-                        },
-                        onError: exception =>
+            var generation = ++_reloadGeneration;
+            _reloadTokenSource?.Cancel();
+            var reloadTokenSource = new CancellationTokenSource();
+            _reloadTokenSource = reloadTokenSource;
+            var length = _manager.Settings.MediationScopes.Length;
+            if (_mediationPackageInfos == default || _mediationPackageInfos.Length != length)
+            {
+                _mediationPackageInfos = new PackageInfoDetails[length];
+            }
+
+            ReloadPackagesAsync(generation, reloadTokenSource, superReload)
+                .ContinueOnMainThread(
+                    _ => FinishReload(generation, reloadTokenSource),
+                    onError: exception =>
+                    {
+                        if (IsCurrentReload(generation, reloadTokenSource))
                         {
                             Debug.LogException(exception);
-                            _tokenSource?.Dispose();
-                            _tokenSource = default;
-                        },
-                        onCancel: () =>
-                        {
-                            _tokenSource?.Dispose();
-                            _tokenSource = default;
-                        });
+                        }
+                        FinishReload(generation, reloadTokenSource);
+                    },
+                    onCancel: () => FinishReload(generation, reloadTokenSource));
+        }
 
-                    var length = _manager.Settings.MediationScopes.Length;
-                    _mediationPackageInfos = new PackageInfoDetails[length];
-                    _mediationTokenSource = new CancellationTokenSource();
-                    _manager.FetchMediationPackage((index, details) =>
-                        {
-                            _mediationPackageInfos[index] = details;
-                            Repaint();
-                        },
-                        superReload,
-                        installedPackages,
-                        _mediationTokenSource.Token)
-                        .Handled(_ =>
-                        {
-                            _mediationTokenSource?.Dispose();
-                            _mediationTokenSource = default;
-                        });
-                },
-                onError: exception =>
+        async System.Threading.Tasks.Task ReloadPackagesAsync(
+            int generation,
+            CancellationTokenSource reloadTokenSource,
+            bool superReload)
+        {
+            var token = reloadTokenSource.Token;
+            var installedPackages = (await _manager.Installer.GetInfos(token)).ToArray();
+            if (!IsCurrentReload(generation, reloadTokenSource))
+            {
+                return;
+            }
+
+            var googleAdsTask = _manager.FetchGoogleAdsPackageInfo(
+                superReload,
+                installedPackages,
+                token,
+                cachedDetails =>
                 {
-                    Debug.LogException(exception);
-                    _tokenSource?.Dispose();
-                    _tokenSource = default;
+                    if (!IsCurrentReload(generation, reloadTokenSource)) return;
+                    _googleAdsPackageInfo = cachedDetails;
+                    Repaint();
                 },
-                onCancel: () =>
+                loadedDetails =>
                 {
-                    _tokenSource?.Dispose();
-                    _tokenSource = default;
+                    if (!IsCurrentReload(generation, reloadTokenSource)) return;
+                    _googleAdsPackageInfo = loadedDetails;
+                    Repaint();
                 });
+            var mediationTask = _manager.FetchMediationPackage(
+                (index, details) =>
+                {
+                    if (!IsCurrentReload(generation, reloadTokenSource)) return;
+                    _mediationPackageInfos[index] = details;
+                    Repaint();
+                },
+                superReload,
+                installedPackages,
+                token);
+            await System.Threading.Tasks.Task.WhenAll(googleAdsTask, mediationTask);
+        }
+
+        bool IsCurrentReload(int generation, CancellationTokenSource reloadTokenSource)
+            => generation == _reloadGeneration
+               && ReferenceEquals(_reloadTokenSource, reloadTokenSource)
+               && !reloadTokenSource.IsCancellationRequested;
+
+        void FinishReload(int generation, CancellationTokenSource reloadTokenSource)
+        {
+            reloadTokenSource.Dispose();
+            if (ReferenceEquals(_reloadTokenSource, reloadTokenSource))
+            {
+                _reloadTokenSource = default;
+            }
+            if (generation == _reloadGeneration)
+            {
+                Repaint();
+            }
         }
         
         void DrawPackage(PackageInfoDetails details, bool isSettingMode, bool isActiveButton)

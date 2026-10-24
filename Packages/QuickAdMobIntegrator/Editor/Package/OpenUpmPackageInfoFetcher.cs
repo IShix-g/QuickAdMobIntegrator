@@ -19,9 +19,9 @@ namespace QuickAdMobIntegrator.Editor
         public static readonly Regex PackageRegex = new (@"https:\/\/[^\/]+\/([^\/]+)(?:\/([^\/]+))?", RegexOptions.Compiled);
         public const string PackageCachePath = "Library/PackageCache-QuickAdMobIntegrator";
         
-        public bool IsProcessing{ get; private set; }
+        public bool IsProcessing => System.Threading.Volatile.Read(ref _activeFetchCount) > 0;
         bool _isDisposed;
-        CancellationTokenSource _tokenSource;
+        int _activeFetchCount;
         readonly PackageInstaller _installer;
         
         public OpenUpmPackageInfoFetcher(PackageInstaller installer) => _installer = installer;
@@ -33,7 +33,8 @@ namespace QuickAdMobIntegrator.Editor
             string openUpmPackageInfoUrl,
             bool supperReload,
             IEnumerable<PackageInfo> installedPackages,
-            CancellationToken token = default)
+            CancellationToken token = default,
+            Action<PackageInfoDetails> onCacheLoaded = default)
         {
             if (!openUpmPackageInfoUrl.StartsWith("https://package.openupm.com"))
             {
@@ -42,13 +43,12 @@ namespace QuickAdMobIntegrator.Editor
             
             var info = default(PackageInfo);
             var name = ExtractPackageInfo(openUpmPackageInfoUrl);
+            Interlocked.Increment(ref _activeFetchCount);
             try
             {
-                IsProcessing = true;
-
-                _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+                token.ThrowIfCancellationRequested();
                 info = installedPackages == default
-                    ? await _installer.GetInfoByPackageId(name, _tokenSource.Token)
+                    ? await _installer.GetInfoByPackageId(name, token)
                     : _installer.GetInfoByPackageId(name, installedPackages);
                 var local = info != default
                     ? new PackageLocalInfo
@@ -65,25 +65,32 @@ namespace QuickAdMobIntegrator.Editor
                 {
                     server = await GetPackageInfoFromCache(fileNameFromUrl, token);
                 }
-
-                if (server == default)
+                token.ThrowIfCancellationRequested();
+                if (server != default)
                 {
-                    server = await FetchPackageInfoFromOpenUpm(openUpmPackageInfoUrl);
-                    if (server != default)
-                    {
-                        await SavePackageInfoToCache(fileNameFromUrl, server, token);
-                    }
+                    var cachedDetails = new PackageInfoDetails(local, server, name);
+                    onCacheLoaded?.Invoke(cachedDetails);
+                }
+
+                server = await FetchPackageInfoFromOpenUpm(openUpmPackageInfoUrl, token);
+                token.ThrowIfCancellationRequested();
+                if (server != default)
+                {
+                    await SavePackageInfoToCache(fileNameFromUrl, server, token);
                 }
 
                 return new PackageInfoDetails(local, server, name);
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
-                Debug.LogWarning("Task was canceled. Exception: " + ex.Message);
-                return null;
+                throw;
             }
             catch (Exception ex)
             {
+                if (token.IsCancellationRequested)
+                {
+                    throw new OperationCanceledException(token);
+                }
                 var message = ex.Message + "\n";
                 if (info != default)
                 {
@@ -97,77 +104,71 @@ namespace QuickAdMobIntegrator.Editor
             }
             finally
             {
-                IsProcessing = false;
+                Interlocked.Decrement(ref _activeFetchCount);
             }
         }
         
-        public async Task<PackageRemoteInfo> FetchPackageInfoFromOpenUpm(string openUpmPackageInfoUrl)
+        public async Task<PackageRemoteInfo> FetchPackageInfoFromOpenUpm(string openUpmPackageInfoUrl, CancellationToken token = default)
         {
             if (!openUpmPackageInfoUrl.StartsWith("https://package.openupm.com"))
             {
                 throw new ArgumentException("Invalid package url. Please use the following format: https://package.openupm.com/{package-name}");
             }
             
-            IsProcessing = true;
+            using var request = UnityWebRequest.Get(openUpmPackageInfoUrl);
+            using var registration = token.Register(request.Abort);
+            request.timeout = 30;
+            await request.SendWebRequest();
+            token.ThrowIfCancellationRequested();
+            if (!request.isDone)
+            {
+                throw new InvalidOperationException(request.error);
+            }
+            
+            var jsonObject = JObject.Parse(request.downloadHandler.text);
+            var result = new PackageRemoteInfo();
+            if (jsonObject.TryGetValue("name", out var nameToken))
+            {
+                result.Name = nameToken.ToString();
+            }
+
+            var versions = HashSetPool<string>.Get();
             try
             {
-                using var request = UnityWebRequest.Get(openUpmPackageInfoUrl);
-                request.timeout = 30;
-                await request.SendWebRequest();
-                if (!request.isDone)
+                if (jsonObject.TryGetValue("versions", out var versionsToken)
+                    && versionsToken is JObject versionsDict)
                 {
-                    throw new InvalidOperationException(request.error);
-                }
-            
-                var jsonObject = JObject.Parse(request.downloadHandler.text);
-                var result = new PackageRemoteInfo();
-                if (jsonObject.TryGetValue("name", out var nameToken))
-                {
-                    result.Name = nameToken.ToString();
-                }
-
-                var versions = HashSetPool<string>.Get();
-                try
-                {
-                    if (jsonObject.TryGetValue("versions", out var versionsToken)
-                        && versionsToken is JObject versionsDict)
+                    foreach (var versionProperty in versionsDict.Properties())
                     {
-                        foreach (var versionProperty in versionsDict.Properties())
-                        {
-                            versions.Add(versionProperty.Name);
+                        versions.Add(versionProperty.Name);
 
-                            if (string.IsNullOrEmpty(result.DisplayName)
-                                && versionProperty.Value is JObject versionObject
-                                && versionObject.TryGetValue("displayName", out var displayName))
-                            {
-                                result.DisplayName = displayName.ToString();
-                            }
+                        if (string.IsNullOrEmpty(result.DisplayName)
+                            && versionProperty.Value is JObject versionObject
+                            && versionObject.TryGetValue("displayName", out var displayName))
+                        {
+                            result.DisplayName = displayName.ToString();
                         }
                     }
-                    result.Versions = versions.ToArray();
                 }
-                finally
-                {
-                    HashSetPool<string>.Release(versions);
-                }
-
-                if (jsonObject.TryGetValue("dist-tags", out var dist)
-                    && dist is JObject distTags
-                    && distTags.TryGetValue("latest", out var latest))
-                {
-                    result.LatestVersion = latest.ToString();
-                }
-                else if (versions.Count > 0)
-                {
-                    result.LatestVersion = versions.Max();
-                }
-
-                return result;
+                result.Versions = versions.ToArray();
             }
             finally
             {
-                IsProcessing = false;
+                HashSetPool<string>.Release(versions);
             }
+
+            if (jsonObject.TryGetValue("dist-tags", out var dist)
+                && dist is JObject distTags
+                && distTags.TryGetValue("latest", out var latest))
+            {
+                result.LatestVersion = latest.ToString();
+            }
+            else if (versions.Count > 0)
+            {
+                result.LatestVersion = versions.Max();
+            }
+
+            return result;
         }
 
         public static string ExtractPackageInfo(string url)
@@ -253,11 +254,6 @@ namespace QuickAdMobIntegrator.Editor
             }
             _isDisposed = true;
             
-            if (_tokenSource != default)
-            {
-                _tokenSource.Dispose();
-                _tokenSource = default;
-            }
         }
     }
 }
