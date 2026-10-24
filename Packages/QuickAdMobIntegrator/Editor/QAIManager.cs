@@ -1,7 +1,9 @@
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace QuickAdMobIntegrator.Editor
 {
@@ -39,16 +41,23 @@ namespace QuickAdMobIntegrator.Editor
             ManifestRegistryConfigurator.Add(Settings.Registry);
         }
 
-        public async Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(bool superReload, CancellationToken token = default)
+        public async Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(
+            bool superReload,
+            IEnumerable<PackageInfo> installedPackages,
+            CancellationToken token = default)
         {
             var url = Settings.AdmobScope.OpenUpmInfoUrl;
-            var details = await _fetcher.FetchPackageInfo(url, superReload, token);
+            var details = await _fetcher.FetchPackageInfo(url, superReload, installedPackages, token);
             var displayName = details.Remote.DisplayName;
             details.Remote.DisplayName = displayName.Replace("for Unity", string.Empty);
             return details;
         }
 
-        public async Task FetchMediationPackage(Action<int, PackageInfoDetails> onLoadedAction, bool superReload, CancellationToken token = default)
+        public async Task FetchMediationPackage(
+            Action<int, PackageInfoDetails> onLoadedAction,
+            bool superReload,
+            IEnumerable<PackageInfo> installedPackages,
+            CancellationToken token = default)
         {
             _isProcessingMediation = true;
             try
@@ -62,7 +71,7 @@ namespace QuickAdMobIntegrator.Editor
                     }
 
                     var index = i;
-                    tasks[i] = _fetcher.FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, token);
+                    tasks[i] = _fetcher.FetchPackageInfo(Settings.MediationScopes[i].OpenUpmInfoUrl, superReload, installedPackages, token);
                     tasks[i].ContinueOnMainThread(task =>
                     {
                         var details = task.Result;

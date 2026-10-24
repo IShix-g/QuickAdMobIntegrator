@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using QuickAdMobIntegrator.Admob.Editor;
 using UnityEditor;
@@ -508,31 +509,59 @@ namespace QuickAdMobIntegrator.Editor
         void ReloadPackages(bool superReload)
         {
             _adMobSettingsValidator.Validate();
-            
+
             _tokenSource = new CancellationTokenSource();
-            _manager.FetchGoogleAdsPackageInfo(superReload, _tokenSource.Token)
+            _manager.Installer.GetInfos(_tokenSource.Token)
                 .ContinueOnMainThread(task =>
                 {
-                    _googleAdsPackageInfo = task.Result;
+                    var installedPackages = task.Result.ToArray();
+                    _manager.FetchGoogleAdsPackageInfo(superReload, installedPackages, _tokenSource.Token)
+                        .ContinueOnMainThread(task =>
+                        {
+                            _googleAdsPackageInfo = task.Result;
+                            _tokenSource?.Dispose();
+                            _tokenSource = default;
+                            Repaint();
+                        },
+                        onError: exception =>
+                        {
+                            Debug.LogException(exception);
+                            _tokenSource?.Dispose();
+                            _tokenSource = default;
+                        },
+                        onCancel: () =>
+                        {
+                            _tokenSource?.Dispose();
+                            _tokenSource = default;
+                        });
+
+                    var length = _manager.Settings.MediationScopes.Length;
+                    _mediationPackageInfos = new PackageInfoDetails[length];
+                    _mediationTokenSource = new CancellationTokenSource();
+                    _manager.FetchMediationPackage((index, details) =>
+                        {
+                            _mediationPackageInfos[index] = details;
+                            Repaint();
+                        },
+                        superReload,
+                        installedPackages,
+                        _mediationTokenSource.Token)
+                        .Handled(_ =>
+                        {
+                            _mediationTokenSource?.Dispose();
+                            _mediationTokenSource = default;
+                        });
+                },
+                onError: exception =>
+                {
+                    Debug.LogException(exception);
                     _tokenSource?.Dispose();
                     _tokenSource = default;
-                    Repaint();
-                });
-
-            var length = _manager.Settings.MediationScopes.Length;
-            _mediationPackageInfos = new PackageInfoDetails[length];
-            _mediationTokenSource = new CancellationTokenSource();
-            _manager.FetchMediationPackage((index, details) =>
-                {
-                    _mediationPackageInfos[index] = details;
-                    Repaint();
                 },
-                superReload,
-                _mediationTokenSource.Token)
-                .Handled(_ =>
+                onCancel: () =>
                 {
-                    _mediationTokenSource?.Dispose();
-                    _mediationTokenSource = default;
+                    _tokenSource?.Dispose();
+                    _tokenSource = default;
                 });
         }
         

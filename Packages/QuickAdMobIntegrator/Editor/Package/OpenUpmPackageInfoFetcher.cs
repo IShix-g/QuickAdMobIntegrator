@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -26,6 +27,13 @@ namespace QuickAdMobIntegrator.Editor
         public OpenUpmPackageInfoFetcher(PackageInstaller installer) => _installer = installer;
         
         public async Task<PackageInfoDetails> FetchPackageInfo(string openUpmPackageInfoUrl, bool supperReload, CancellationToken token = default)
+            => await FetchPackageInfo(openUpmPackageInfoUrl, supperReload, default, token);
+
+        public async Task<PackageInfoDetails> FetchPackageInfo(
+            string openUpmPackageInfoUrl,
+            bool supperReload,
+            IEnumerable<PackageInfo> installedPackages,
+            CancellationToken token = default)
         {
             if (!openUpmPackageInfoUrl.StartsWith("https://package.openupm.com"))
             {
@@ -39,7 +47,9 @@ namespace QuickAdMobIntegrator.Editor
                 IsProcessing = true;
 
                 _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
-                info = await _installer.GetInfoByPackageId(name, _tokenSource.Token);
+                info = installedPackages == default
+                    ? await _installer.GetInfoByPackageId(name, _tokenSource.Token)
+                    : _installer.GetInfoByPackageId(name, installedPackages);
                 var local = info != default
                     ? new PackageLocalInfo
                     {

@@ -60,6 +60,11 @@ namespace QuickAdMobIntegrator.Editor
         public async Task<PackageInfo> GetInfoByPackageId(string packageIdOrPackageInstallUrl, CancellationToken token = default)
         {
             var infos = await GetInfos(token);
+            return GetInfoByPackageId(packageIdOrPackageInstallUrl, infos);
+        }
+
+        public PackageInfo GetInfoByPackageId(string packageIdOrPackageInstallUrl, IEnumerable<PackageInfo> infos)
+        {
             foreach (var info in infos)
             {
                 if (info.packageId.Contains(packageIdOrPackageInstallUrl, StringComparison.OrdinalIgnoreCase))
