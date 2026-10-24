@@ -7,7 +7,24 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace QuickAdMobIntegrator.Editor
 {
-    internal sealed class QAIManager : IDisposable
+    internal interface IPackageReloadSource
+    {
+        int MediationCount { get; }
+        Task<IEnumerable<PackageInfo>> GetInstalledPackages(CancellationToken token);
+        Task<PackageInfoDetails> FetchGoogleAdsPackageInfo(
+            bool superReload,
+            IEnumerable<PackageInfo> installedPackages,
+            CancellationToken token,
+            Action<PackageInfoDetails> onCacheLoaded,
+            Action<PackageInfoDetails> onLoaded);
+        Task FetchMediationPackage(
+            Action<int, PackageInfoDetails> onLoadedAction,
+            bool superReload,
+            IEnumerable<PackageInfo> installedPackages,
+            CancellationToken token);
+    }
+
+    internal sealed class QAIManager : IDisposable, IPackageReloadSource
     {
         public PackageInstaller Installer { get; }
         public PackageSettings Settings { get; }
@@ -19,6 +36,11 @@ namespace QuickAdMobIntegrator.Editor
         readonly OpenUpmPackageInfoFetcher _fetcher;
         bool _isDisposed;
         int _activeMediationCount;
+
+        int IPackageReloadSource.MediationCount => Settings.MediationScopes.Length;
+
+        Task<IEnumerable<PackageInfo>> IPackageReloadSource.GetInstalledPackages(CancellationToken token)
+            => Installer.GetInfos(token);
 
         public QAIManager(
             PackageInstaller installer,

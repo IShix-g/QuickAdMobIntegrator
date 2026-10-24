@@ -1,0 +1,12 @@
+{
+    "name": "QuickAdMobIntegrator.Reload.Tests",
+    "references": [
+        "QuickAdMobIntegrator.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

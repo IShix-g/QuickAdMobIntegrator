@@ -66,6 +66,7 @@ namespace QuickAdMobIntegrator.Editor
         Vector2 _scrollPos;
         Vector2 _textAreaScrollPos;
         QAIManager _manager;
+        IPackageReloadSource _reloadSource;
         PackageInfoDetails _googleAdsPackageInfo;
         CancellationTokenSource _tokenSource;
         PackageInfoDetails[] _mediationPackageInfos;
@@ -112,6 +113,7 @@ namespace QuickAdMobIntegrator.Editor
         void Initialize()
         {
             _manager = QAIManagerFactory.Create();
+            _reloadSource = _manager;
             if (_manager.IsCompletedRegistrySetUp)
             {
                 ReloadPackages(!IsFirstOpen);
@@ -525,7 +527,7 @@ namespace QuickAdMobIntegrator.Editor
             _reloadTokenSource?.Cancel();
             var reloadTokenSource = new CancellationTokenSource();
             _reloadTokenSource = reloadTokenSource;
-            var length = _manager.Settings.MediationScopes.Length;
+            var length = _reloadSource.MediationCount;
             if (_mediationPackageInfos == default || _mediationPackageInfos.Length != length)
             {
                 _mediationPackageInfos = new PackageInfoDetails[length];
@@ -551,13 +553,13 @@ namespace QuickAdMobIntegrator.Editor
             bool superReload)
         {
             var token = reloadTokenSource.Token;
-            var installedPackages = (await _manager.Installer.GetInfos(token)).ToArray();
+            var installedPackages = (await _reloadSource.GetInstalledPackages(token)).ToArray();
             if (!IsCurrentReload(generation, reloadTokenSource))
             {
                 return;
             }
 
-            var googleAdsTask = _manager.FetchGoogleAdsPackageInfo(
+            var googleAdsTask = _reloadSource.FetchGoogleAdsPackageInfo(
                 superReload,
                 installedPackages,
                 token,
@@ -573,7 +575,7 @@ namespace QuickAdMobIntegrator.Editor
                     _googleAdsPackageInfo = loadedDetails;
                     Repaint();
                 });
-            var mediationTask = _manager.FetchMediationPackage(
+            var mediationTask = _reloadSource.FetchMediationPackage(
                 (index, details) =>
                 {
                     if (!IsCurrentReload(generation, reloadTokenSource)) return;
