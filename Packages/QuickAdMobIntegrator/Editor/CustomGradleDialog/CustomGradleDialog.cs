@@ -9,15 +9,27 @@ namespace QuickAdMobIntegrator.Editor
         CustomGradleDialogContents _contents;
         Vector2 _scrollPos;
         Texture2D _logo;
+        float _initialImageWidth;
         
         public static void Open(CustomGradleDialogContents contents, Texture2D logo = default, string dialogTitle = default)
         {
-            var window = GetWindow<CustomGradleDialog>(dialogTitle);
+            OpenAndroidPlayerSettings();
+            var window = CreateInstance<CustomGradleDialog>();
+            window.titleContent = new GUIContent(dialogTitle ?? "Android Settings");
             window.minSize = new Vector2(480, 400);
             window.maxSize = new Vector2(480, 870);
             window._contents = contents;
             window._logo = logo;
+            var editorBounds = EditorGUIUtility.GetMainWindowPosition();
+            var initialHeight = Mathf.Clamp(editorBounds.height - 60, 400, 870);
+            window.position = new Rect(editorBounds.center.x - 240, editorBounds.center.y - initialHeight / 2, 480, initialHeight);
             window.ShowUtility();
+        }
+
+        static void OpenAndroidPlayerSettings()
+        {
+            SettingsService.OpenProjectSettings("Project/Player");
+            EditorUserBuildSettings.selectedBuildTargetGroup = BuildTargetGroup.Android;
         }
 
         void OnDestroy()
@@ -39,12 +51,22 @@ namespace QuickAdMobIntegrator.Editor
             
             if(_logo != default)
             {
-                var style = new GUIStyle(GUI.skin.label)
+                var availableWidth = Mathf.Max(1, position.width - 25);
+                if (_initialImageWidth <= 0)
                 {
-                    padding = new RectOffset(5, 5, 5, 0),
-                    alignment = TextAnchor.MiddleCenter,
-                };
-                GUILayout.Label(_logo, style, GUILayout.Width(470), GUILayout.Height(700));
+                    var messageHeight = EditorStyles.wordWrappedLabel.CalcHeight(new GUIContent(_contents.Message), position.width - 40);
+                    var availableHeight = Mathf.Max(1, position.height - messageHeight - EditorGUIUtility.singleLineHeight - 60);
+                    // Fit on first open; keep this scale when the user resizes so scrolling remains available.
+                    _initialImageWidth = Mathf.Min(availableWidth, availableHeight * _logo.width / _logo.height);
+                }
+                var imageWidth = Mathf.Min(_initialImageWidth, availableWidth);
+                var imageHeight = imageWidth * _logo.height / _logo.width;
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                var imageRect = GUILayoutUtility.GetRect(imageWidth, imageHeight, GUILayout.ExpandWidth(false));
+                GUI.DrawTexture(imageRect, _logo, ScaleMode.ScaleToFit);
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
             }
             
             {
@@ -58,8 +80,7 @@ namespace QuickAdMobIntegrator.Editor
                 GUILayout.Space(10);
                 if (GUILayout.Button("Open Project Settings (Android)"))
                 {
-                    SettingsService.OpenProjectSettings("Project/Player");
-                    EditorUserBuildSettings.selectedBuildTargetGroup = BuildTargetGroup.Android;
+                    OpenAndroidPlayerSettings();
                     EditorApplication.delayCall += Focus;
                 }
                 GUILayout.EndVertical();

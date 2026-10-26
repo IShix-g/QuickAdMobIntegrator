@@ -62,6 +62,8 @@ namespace QuickAdMobIntegrator.Editor
         GUIContent _helpHeader;
         GUIContent _completedIcon;
         GUIContent _notCompletedIcon;
+        GUIContent _pendingRequirementIcon;
+        GUIContent _metRequirementIcon;
         Texture2D _logo;
         Vector2 _scrollPos;
         Vector2 _textAreaScrollPos;
@@ -92,6 +94,8 @@ namespace QuickAdMobIntegrator.Editor
             _backIcon = EditorGUIUtility.IconContent("back");
             _helpHeader = EditorGUIUtility.IconContent("Help");
             _helpIcon = EditorGUIUtility.IconContent("_Help");
+            _pendingRequirementIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
+            _metRequirementIcon = EditorGUIUtility.IconContent("winbtn_mac_max");
             _completedIcon = EditorGUIUtility.IconContent(
 #if UNITY_2023_1_OR_NEWER
                 "d_greencheckmark"
@@ -124,7 +128,7 @@ namespace QuickAdMobIntegrator.Editor
                 return;
             }
             var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
-            _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/header.png");
+            _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/Images/header.png");
             _manager = QAIManagerFactory.Create();
             _reloadSource = _manager;
             if (_manager.IsCompletedRegistrySetUp)
@@ -150,6 +154,8 @@ namespace QuickAdMobIntegrator.Editor
             _logo = default;
             _helpHeader = default;
             _completedIcon = default;
+            _pendingRequirementIcon = default;
+            _metRequirementIcon = default;
             _logo = default;
             _tokenSource?.SafeCancelAndDispose();
             IsShowSetUpFoldout = _isShowSetUpFoldout;
@@ -363,6 +369,10 @@ namespace QuickAdMobIntegrator.Editor
                     );
 
                     GUILayout.Space(5);
+
+                    DrawNextGenSetup();
+
+                    GUILayout.Space(5);
                     
                     DrawChecklistItem(
                         "(Optional) Configure Custom Gradle",
@@ -372,20 +382,15 @@ namespace QuickAdMobIntegrator.Editor
                         "Configure",
                         () =>
                         {
-                            EditorApplication.delayCall += () =>
-                            {
-                                var customContents = new CustomGradleDialogContents
-                                (
-                                    "AdMob can be used without this configuration.\nPlease configure Publishing Settings/Build referring to the image.\nWhen configured, unnecessary files won't be imported into Assets/Plugins/Android.\nThis is convenient for git management.",
-                                    () =>
-                                    {
-                                        EditorApplication.delayCall += DeleteAndroidSdkDialogIfNeeded;
-                                    }
-                                );
-                                var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
-                                var img = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/android_setting.jpg");
-                                CustomGradleDialog.Open(customContents, img, "Custom Gradle Configuration");
-                            };
+                            var customContents = new CustomGradleDialogContents
+                            (
+                                "AdMob can be used without this configuration.\nPlease configure Publishing Settings/Build referring to the image.\nWhen configured, unnecessary files won't be imported into Assets/Plugins/Android.\nThis is convenient for git management.",
+                                () =>
+                                {
+                                    EditorApplication.delayCall += DeleteAndroidSdkDialogIfNeeded;
+                                }
+                            );
+                            OpenAndroidSettingsPreview("android_setting.jpg", "Custom Gradle Configuration", customContents);
                         }
                     );
                     
@@ -857,6 +862,106 @@ namespace QuickAdMobIntegrator.Editor
                 });
         }
         
+        void DrawNextGenSetup()
+        {
+            var state = AdMobSettingsSupport.GetNextGenSdkState();
+            DrawChecklistItem(
+                "Use GMA Next-Gen SDK (Android)",
+                state == NextGenSdkState.Enabled,
+                state == NextGenSdkState.Available,
+                true,
+                state == NextGenSdkState.Enabled ? "Enabled" : "Enable",
+                () =>
+                {
+                    if (!AdMobSettingsSupport.TryEnableNextGenSdk())
+                    {
+                        Debug.LogWarning("Next-Gen could not be enabled. Check the SDK version and Minimum API Level in Essential Setup Steps.");
+                    }
+                    Repaint();
+                }
+            );
+
+            var sdkReady = state != NextGenSdkState.NotInstalled && state != NextGenSdkState.Unsupported;
+            var sdkVersion = _googleAdsPackageInfo.IsInstalled ? _googleAdsPackageInfo.Local.Version : "Not installed";
+            var minimumApiLevel = (int)PlayerSettings.Android.minSdkVersion;
+            var apiReady = minimumApiLevel >= AdMobSettingsSupport.NextGenMinimumApiLevel;
+            var canUpdateSdk = false;
+            if (!sdkReady && _googleAdsPackageInfo.IsInstalled && _googleAdsPackageInfo.IsLoaded)
+            {
+                var setting = _manager.Settings.GetByName(_googleAdsPackageInfo.Remote.Name);
+                if (setting.HasFixedVersion)
+                {
+                    _googleAdsPackageInfo.SetFixedVersion(setting.FixedVersion);
+                }
+                else
+                {
+                    _googleAdsPackageInfo.RemoveFixedVersion();
+                }
+                var targetVersion = setting.HasFixedVersion ? setting.FixedVersion : _googleAdsPackageInfo.Remote.LatestVersion;
+                canUpdateSdk = _googleAdsPackageInfo.HasUpdate
+                               && Version.TryParse(targetVersion, out var target)
+                               && target >= new Version(11, 1, 0)
+                               && Version.TryParse(_googleAdsPackageInfo.Local.Version, out var current)
+                               && target > current;
+            }
+
+            GUILayout.BeginVertical(new GUIStyle { margin = new RectOffset(18, 0, 3, 5) });
+            DrawNextGenRequirement(
+                "Google Mobile Ads 11.1.0+",
+                sdkReady,
+                sdkVersion,
+                canUpdateSdk ? () => InstallPackage(_googleAdsPackageInfo.PackageInstallUrl) : (Action)null,
+                "Update"
+            );
+            GUILayout.Space(3);
+            DrawNextGenRequirement(
+                "Minimum Android API 24+",
+                apiReady,
+                minimumApiLevel.ToString(),
+                () =>
+                {
+                    var contents = new CustomGradleDialogContents(
+                        "Other Settings > Identification > Minimum API Level\nSet this to Android 7.0 (API level 24) or higher to use GMA Next-Gen SDK."
+                    );
+                    OpenAndroidSettingsPreview("android_minimum_api.jpg", "Android Minimum API Level", contents);
+                }
+            );
+            GUILayout.EndVertical();
+        }
+
+        void OpenAndroidSettingsPreview(string imageName, string windowTitle, CustomGradleDialogContents contents)
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (this == null)
+                {
+                    contents.Dispose();
+                    return;
+                }
+                var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
+                var image = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/Images/" + imageName);
+                CustomGradleDialog.Open(contents, image, windowTitle);
+            };
+        }
+
+        void DrawNextGenRequirement(string label, bool isComplete, string currentValue, Action onClick = null, string buttonName = "Settings")
+        {
+            GUILayout.BeginHorizontal(new GUIStyle { padding = new RectOffset(22, 8, 0, 3) });
+            GUILayout.Label(isComplete ? _metRequirementIcon : _pendingRequirementIcon, GUILayout.Width(15), GUILayout.Height(15));
+            GUILayout.Label($"{label} (Current: {currentValue})", EditorStyles.wordWrappedLabel);
+
+            if (!isComplete && onClick != null)
+            {
+                EditorGUI.BeginDisabledGroup(_manager.IsProcessing || _versionChecker.IsProcessing);
+                if (GUILayout.Button(buttonName, GUILayout.Width(75)))
+                {
+                    onClick();
+                }
+                EditorGUI.EndDisabledGroup();
+            }
+            GUILayout.EndHorizontal();
+        }
+
         void DrawChecklistItem(string label, bool isComplete, bool buttonActive, bool buttonShow, string buttonName, Action onClick)
         {
             var style = new GUIStyle() {padding = new RectOffset(22, 8, 0, 3)};

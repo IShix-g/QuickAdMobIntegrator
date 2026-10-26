@@ -1,0 +1,12 @@
+{
+    "name": "QuickAdMobIntegrator.Admob.Tests",
+    "references": [
+        "QuickAdMobIntegrator.Admob.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
