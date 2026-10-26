@@ -81,6 +81,10 @@ namespace QuickAdMobIntegrator.Editor
 
         void OnEnable()
         {
+            if (AssetDatabase.IsAssetImportWorkerProcess())
+            {
+                return;
+            }
             _installedIcon = EditorGUIUtility.IconContent("Progress");
             _updateIcon = EditorGUIUtility.IconContent("Update-Available");
             _refreshIcon = EditorGUIUtility.IconContent("Refresh");
@@ -102,8 +106,6 @@ namespace QuickAdMobIntegrator.Editor
                 "winbtn_mac_close"
 #endif
                 );
-            var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
-            _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/header.png");
             _adMobSettingsValidator = new AdMobSettingsValidator();
             _isSettingMode = false;
             _isShowSetUpFoldout = IsShowSetUpFoldout;
@@ -112,6 +114,17 @@ namespace QuickAdMobIntegrator.Editor
 
         void Initialize()
         {
+            if (this == null || AssetDatabase.IsAssetImportWorkerProcess())
+            {
+                return;
+            }
+            if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+            {
+                EditorApplication.delayCall += Initialize;
+                return;
+            }
+            var path = QAIManagerFactory.PackageRootPath.TrimEnd('/');
+            _logo = AssetDatabase.LoadAssetAtPath<Texture2D>(path + "/Editor/header.png");
             _manager = QAIManagerFactory.Create();
             _reloadSource = _manager;
             if (_manager.IsCompletedRegistrySetUp)
@@ -124,6 +137,7 @@ namespace QuickAdMobIntegrator.Editor
 
         void OnDisable()
         {
+            EditorApplication.delayCall -= Initialize;
             _reloadGeneration++;
             _reloadTokenSource?.Cancel();
             _manager?.Dispose();
@@ -654,6 +668,7 @@ namespace QuickAdMobIntegrator.Editor
                         && setting is PackageSettings.Scope scope)
                     {
                         scope.IsEnabled = isEnabled;
+                        _manager.Settings.Save();
                         _isUpdated = true;
                     }
                     GUI.color = color;
@@ -782,6 +797,7 @@ namespace QuickAdMobIntegrator.Editor
                             setting.FixedVersion = newIndex == versions.Length
                                                         ? string.Empty
                                                         : versions[newIndex];
+                            _manager.Settings.Save();
                             _isUpdated = true;
                         }
                     }

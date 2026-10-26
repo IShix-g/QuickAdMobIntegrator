@@ -13,11 +13,6 @@ namespace QuickAdMobIntegrator.Editor
         public Scope[] MediationScopes;
         [TextArea] public string Notes;
         
-        void OnDisable()
-        {
-            Save();
-        }
-        
         public IScope GetByName(string name)
         {
             if (AdmobScope.OpenUpmInfoUrl.Contains(name))

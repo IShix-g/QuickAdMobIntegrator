@@ -16,6 +16,10 @@ namespace QuickAdMobIntegrator.Editor
         [InitializeOnLoadMethod]
         static void DetectEditorStartup()
         {
+            if (AssetDatabase.IsAssetImportWorkerProcess())
+            {
+                return;
+            }
             if (!IsFirstInit)
             {
                 IsFirstInit = true;
@@ -25,6 +29,15 @@ namespace QuickAdMobIntegrator.Editor
 
         static void FirstInit()
         {
+            if (AssetDatabase.IsAssetImportWorkerProcess())
+            {
+                return;
+            }
+            if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+            {
+                EditorApplication.delayCall += FirstInit;
+                return;
+            }
             VersionDataUpdater.UpdateTo130();
         }
     }
