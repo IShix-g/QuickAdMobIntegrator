@@ -94,8 +94,6 @@ namespace QuickAdMobIntegrator.Editor
             _backIcon = EditorGUIUtility.IconContent("back");
             _helpHeader = EditorGUIUtility.IconContent("Help");
             _helpIcon = EditorGUIUtility.IconContent("_Help");
-            _pendingRequirementIcon = EditorGUIUtility.IconContent("winbtn_mac_close");
-            _metRequirementIcon = EditorGUIUtility.IconContent("winbtn_mac_max");
             _completedIcon = EditorGUIUtility.IconContent(
 #if UNITY_2023_1_OR_NEWER
                 "d_greencheckmark"
@@ -110,6 +108,8 @@ namespace QuickAdMobIntegrator.Editor
                 "winbtn_mac_close"
 #endif
                 );
+            _pendingRequirementIcon = _notCompletedIcon;
+            _metRequirementIcon = _completedIcon;
             _adMobSettingsValidator = new AdMobSettingsValidator();
             _isSettingMode = false;
             _isShowSetUpFoldout = IsShowSetUpFoldout;
