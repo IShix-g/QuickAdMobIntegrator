@@ -84,13 +84,16 @@ namespace QuickAdMobIntegrator.Editor
                 manager.SetUpRegistry();
                 var installed = await manager.Installer.GetInfos(cancellationToken);
                 var scopes = GetInstallableScopes(manager.Settings);
+                var installUrls = new List<string>(scopes.Length);
                 foreach (var scope in scopes)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var details = await manager.FetchPackageInfoForApi(scope, installed, cancellationToken);
-                    await manager.Installer.Install(GetInstallUrl(scope, details), cancellationToken, false);
-                    installed = await manager.Installer.GetInfos(cancellationToken);
+                    installUrls.Add(GetInstallUrl(scope, details));
                 }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                await manager.Installer.Install(installUrls.ToArray(), cancellationToken, false);
             }
         }
 

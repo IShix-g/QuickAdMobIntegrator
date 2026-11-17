@@ -171,3 +171,5 @@ static class AdMobSetup
 ```
 
 `SetFixedVersion` accepts `null` or an empty string to clear a pin. Package status includes the installed version, target version, installation state, update state, and required registry state. `HasUpdate` is true only when an installed package differs from its target; use `IsInstalled` to identify packages that still need installation.
+
+Installing packages can trigger a Unity domain reload and interrupt a status query in progress. If that happens, call `GetPackageStatusesAsync()` again after the reload.
