@@ -93,17 +93,7 @@ namespace QuickAdMobIntegrator.Editor
             CancellationToken token)
         {
             var details = await _fetcher.FetchPackageInfo(scope.OpenUpmInfoUrl, true, installedPackages, token);
-            if (details.Remote != default)
-            {
-                details.Remote.DisplayName = (details.Remote.DisplayName ?? string.Empty)
-                    .Replace("Google Mobile Ads", string.Empty)
-                    .Replace("Mediation", string.Empty)
-                    .Replace("for Unity", string.Empty);
-                if (scope.HasFixedVersion)
-                {
-                    details.SetFixedVersion(scope.FixedVersion);
-                }
-            }
+            PrepareDisplayName(details, !scope.IsRequired);
             return details;
         }
 
@@ -122,12 +112,24 @@ namespace QuickAdMobIntegrator.Editor
         }
 
         static void PrepareGoogleAdsDetails(PackageInfoDetails details)
+            => PrepareDisplayName(details, false);
+
+        static void PrepareMediationDetails(PackageInfoDetails details)
+            => PrepareDisplayName(details, true);
+
+        static void PrepareDisplayName(PackageInfoDetails details, bool isMediation)
         {
             if (details?.Remote == default)
             {
                 return;
             }
-            details.Remote.DisplayName = (details.Remote.DisplayName ?? string.Empty).Replace("for Unity", string.Empty);
+            var displayName = details.Remote.DisplayName ?? string.Empty;
+            if (isMediation)
+            {
+                displayName = displayName.Replace("Google Mobile Ads", string.Empty)
+                                         .Replace("Mediation", string.Empty);
+            }
+            details.Remote.DisplayName = displayName.Replace("for Unity", string.Empty);
         }
 
         public async Task FetchMediationPackage(
@@ -172,18 +174,6 @@ namespace QuickAdMobIntegrator.Editor
             {
                 System.Threading.Interlocked.Decrement(ref _activeMediationCount);
             }
-        }
-
-        static void PrepareMediationDetails(PackageInfoDetails details)
-        {
-            if (details?.Remote == default)
-            {
-                return;
-            }
-            details.Remote.DisplayName = (details.Remote.DisplayName ?? string.Empty)
-                                        .Replace("Google Mobile Ads", string.Empty)
-                                        .Replace("Mediation", string.Empty)
-                                        .Replace("for Unity", string.Empty);
         }
 
         public void Dispose()

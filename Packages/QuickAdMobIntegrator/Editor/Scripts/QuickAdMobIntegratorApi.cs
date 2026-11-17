@@ -16,7 +16,7 @@ namespace QuickAdMobIntegrator.Editor
                 var installed = await manager.Installer.GetInfos(cancellationToken);
                 var statuses = new List<QuickAdMobPackageStatus>();
                 var googleAds = await manager.FetchPackageInfoForApi(manager.Settings.AdmobScope, installed, cancellationToken);
-                statuses.Add(ToStatus(googleAds, manager.Settings.AdmobScope, manager.IsCompletedRegistrySetUp));
+                statuses.Add(CreateStatus(googleAds, manager.Settings.AdmobScope, manager.IsCompletedRegistrySetUp));
 
                 foreach (var scope in manager.Settings.MediationScopes)
                 {
@@ -25,7 +25,7 @@ namespace QuickAdMobIntegrator.Editor
                         continue;
                     }
                     var details = await manager.FetchPackageInfoForApi(scope, installed, cancellationToken);
-                    statuses.Add(ToStatus(details, scope, manager.IsCompletedRegistrySetUp));
+                    statuses.Add(CreateStatus(details, scope, manager.IsCompletedRegistrySetUp));
                 }
 
                 return statuses.ToArray();
@@ -46,8 +46,7 @@ namespace QuickAdMobIntegrator.Editor
         {
             using (var manager = QAIManagerFactory.Create())
             {
-                var scope = GetMediationScope(manager.Settings, packageId);
-                scope.IsEnabled = isEnabled;
+                ConfigureMediation(manager.Settings, packageId, isEnabled);
                 manager.Settings.Save();
             }
         }
@@ -57,8 +56,7 @@ namespace QuickAdMobIntegrator.Editor
         {
             using (var manager = QAIManagerFactory.Create())
             {
-                var scope = GetScope(manager.Settings, packageId);
-                scope.FixedVersion = string.IsNullOrWhiteSpace(version) ? string.Empty : version.Trim();
+                ConfigureFixedVersion(manager.Settings, packageId, version);
                 manager.Settings.Save();
             }
         }
@@ -68,16 +66,13 @@ namespace QuickAdMobIntegrator.Editor
         {
             using (var manager = QAIManagerFactory.Create())
             {
-                var scope = GetScope(manager.Settings, packageId);
-                if (!scope.IsEnabled)
-                {
-                    throw new InvalidOperationException("The requested mediation package is disabled: " + packageId);
-                }
+                var scope = GetPackageScope(manager.Settings, packageId);
+                EnsureInstallable(scope, packageId);
 
                 manager.SetUpRegistry();
                 var installed = await manager.Installer.GetInfos(cancellationToken);
                 var details = await manager.FetchPackageInfoForApi(scope, installed, cancellationToken);
-                await manager.Installer.Install(details.PackageInstallUrl, cancellationToken, false);
+                await manager.Installer.Install(GetInstallUrl(scope, details), cancellationToken, false);
             }
         }
 
@@ -88,23 +83,21 @@ namespace QuickAdMobIntegrator.Editor
             {
                 manager.SetUpRegistry();
                 var installed = await manager.Installer.GetInfos(cancellationToken);
-                var scopes = new List<PackageSettings.IScope> { manager.Settings.AdmobScope };
-                scopes.AddRange(manager.Settings.MediationScopes.Where(scope => scope.IsEnabled));
+                var scopes = GetInstallableScopes(manager.Settings);
                 foreach (var scope in scopes)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var details = await manager.FetchPackageInfoForApi(scope, installed, cancellationToken);
-                    await manager.Installer.Install(details.PackageInstallUrl, cancellationToken, false);
+                    await manager.Installer.Install(GetInstallUrl(scope, details), cancellationToken, false);
                     installed = await manager.Installer.GetInfos(cancellationToken);
                 }
             }
         }
 
-        static QuickAdMobPackageStatus ToStatus(PackageInfoDetails details, PackageSettings.IScope scope, bool registryConfigured)
+        internal static QuickAdMobPackageStatus CreateStatus(PackageInfoDetails details, PackageSettings.IScope scope, bool registryConfigured)
         {
-            var targetVersion = scope.HasFixedVersion
-                ? scope.FixedVersion
-                : details.Remote == null ? string.Empty : details.Remote.LatestVersion;
+            ApplyVersionSetting(scope, details);
+            var targetVersion = GetTargetVersion(details, scope);
             return new QuickAdMobPackageStatus(
                 details.Remote == null ? OpenUpmPackageInfoFetcher.ExtractPackageInfo(scope.OpenUpmInfoUrl) : details.Remote.Name,
                 details.Local == null ? string.Empty : details.Local.Version,
@@ -112,8 +105,52 @@ namespace QuickAdMobIntegrator.Editor
                 scope.IsEnabled,
                 scope.IsRequired,
                 details.IsInstalled,
-                details.IsInstalled && details.Local.Version != targetVersion,
+                details.IsInstalled && !string.IsNullOrEmpty(targetVersion) && details.Local.Version != targetVersion,
                 registryConfigured);
+        }
+
+        internal static void ConfigureMediation(PackageSettings settings, string packageId, bool isEnabled)
+            => GetMediationScope(settings, packageId).IsEnabled = isEnabled;
+
+        internal static void ConfigureFixedVersion(PackageSettings settings, string packageId, string version)
+            => GetPackageScope(settings, packageId).FixedVersion = string.IsNullOrWhiteSpace(version) ? string.Empty : version.Trim();
+
+        internal static PackageSettings.IScope[] GetInstallableScopes(PackageSettings settings)
+        {
+            var scopes = new List<PackageSettings.IScope> { settings.AdmobScope };
+            scopes.AddRange(settings.MediationScopes.Where(scope => scope.IsEnabled));
+            return scopes.ToArray();
+        }
+
+        internal static void EnsureInstallable(PackageSettings.IScope scope, string packageId)
+        {
+            if (!scope.IsEnabled)
+            {
+                throw new InvalidOperationException("The requested mediation package is disabled: " + packageId);
+            }
+        }
+
+        internal static string GetTargetVersion(PackageInfoDetails details, PackageSettings.IScope scope)
+            => scope.HasFixedVersion
+                ? scope.FixedVersion
+                : details.Remote == null ? string.Empty : details.Remote.LatestVersion;
+
+        internal static string GetInstallUrl(PackageSettings.IScope scope, PackageInfoDetails details)
+        {
+            ApplyVersionSetting(scope, details);
+            return details.PackageInstallUrl;
+        }
+
+        static void ApplyVersionSetting(PackageSettings.IScope scope, PackageInfoDetails details)
+        {
+            if (scope.HasFixedVersion)
+            {
+                details.SetFixedVersion(scope.FixedVersion);
+            }
+            else
+            {
+                details.RemoveFixedVersion();
+            }
         }
 
         static PackageSettings.Scope GetMediationScope(PackageSettings settings, string packageId)
@@ -126,7 +163,7 @@ namespace QuickAdMobIntegrator.Editor
             return expected;
         }
 
-        static PackageSettings.IScope GetScope(PackageSettings settings, string packageId)
+        internal static PackageSettings.IScope GetPackageScope(PackageSettings settings, string packageId)
         {
             if (PackageId(settings.AdmobScope) == packageId)
             {
@@ -148,6 +185,7 @@ namespace QuickAdMobIntegrator.Editor
         public bool IsEnabled { get; }
         public bool IsRequired { get; }
         public bool IsInstalled { get; }
+        /// <summary>True when the package is installed and its version differs from the configured target.</summary>
         public bool HasUpdate { get; }
         public bool IsRegistryConfigured { get; }
 
