@@ -129,4 +129,43 @@ Admobを介して第三者の広告会社の広告を流す事ができる機能
 
 `Unity Editor: Window > Package Manager > My Registries`
 
+## Editor API
+
+Editor用C#コードから、Quick AdMob Integratorウィンドウを開かずに設定とインストールを実行できます。APIは`QuickAdMobIntegrator.Editor`名前空間にあります。
+
+```csharp
+using System.Linq;
+using System.Threading.Tasks;
+using QuickAdMobIntegrator.Editor;
+
+static class AdMobSetup
+{
+    public static async Task ConfigureAndInstallAsync()
+    {
+        var before = await QuickAdMobIntegratorApi.GetPackageStatusesAsync();
+        foreach (var package in before)
+        {
+            UnityEngine.Debug.Log($"{package.PackageId}: installed={package.InstalledVersion}, target={package.TargetVersion}, registry={package.IsRegistryConfigured}");
+        }
+
+        QuickAdMobIntegratorApi.SetMediationEnabled("com.google.ads.mobile.mediation.unity", true);
+        var admob = before.First(package => package.PackageId == "com.google.ads.mobile");
+        QuickAdMobIntegratorApi.SetFixedVersion(admob.PackageId, admob.TargetVersion);
+        QuickAdMobIntegratorApi.SetUpRegistry();
+        await QuickAdMobIntegratorApi.InstallOrUpdatePackageAsync("com.google.ads.mobile");
+        await QuickAdMobIntegratorApi.InstallAllAsync();
+
+        var after = await QuickAdMobIntegratorApi.GetPackageStatusesAsync();
+        foreach (var package in after)
+        {
+            UnityEngine.Debug.Log($"{package.PackageId}: installed={package.InstalledVersion}, target={package.TargetVersion}, update={package.HasUpdate}");
+        }
+    }
+}
+```
+
+`SetFixedVersion`に`null`または空文字を渡すと固定バージョンを解除します。状態にはインストール済みバージョン、適用対象バージョン、導入状態、更新状態、必要なレジストリの設定状態が含まれます。`HasUpdate`は導入済みのパッケージのバージョンが適用対象と異なる場合にのみ`true`になります。未導入のパッケージは`IsInstalled`で判定してください。
+
+パッケージ導入で Unity のドメインリロードが発生し、実行中の状態取得が中断されることがあります。その場合は、リロード後に `GetPackageStatusesAsync()` を再度呼び出してください。
+
 <img src="Docs/upm.jpg" width="800"/>

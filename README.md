@@ -134,3 +134,42 @@ You can view and manage installed packages under:
 `Unity Editor: Window > Package Manager > My Registries`
 
 <img src="Docs/upm.jpg" width="800"/>
+
+## Editor API
+
+Editor scripts can configure and install packages without opening the Quick AdMob Integrator window. The API is in the `QuickAdMobIntegrator.Editor` namespace:
+
+```csharp
+using System.Threading.Tasks;
+using System.Linq;
+using QuickAdMobIntegrator.Editor;
+
+static class AdMobSetup
+{
+    public static async Task ConfigureAndInstallAsync()
+    {
+        var before = await QuickAdMobIntegratorApi.GetPackageStatusesAsync();
+        foreach (var package in before)
+        {
+            UnityEngine.Debug.Log($"{package.PackageId}: installed={package.InstalledVersion}, target={package.TargetVersion}, registry={package.IsRegistryConfigured}");
+        }
+
+        QuickAdMobIntegratorApi.SetMediationEnabled("com.google.ads.mobile.mediation.unity", true);
+        var admob = before.First(package => package.PackageId == "com.google.ads.mobile");
+        QuickAdMobIntegratorApi.SetFixedVersion(admob.PackageId, admob.TargetVersion);
+        QuickAdMobIntegratorApi.SetUpRegistry();
+        await QuickAdMobIntegratorApi.InstallOrUpdatePackageAsync("com.google.ads.mobile");
+        await QuickAdMobIntegratorApi.InstallAllAsync();
+
+        var after = await QuickAdMobIntegratorApi.GetPackageStatusesAsync();
+        foreach (var package in after)
+        {
+            UnityEngine.Debug.Log($"{package.PackageId}: installed={package.InstalledVersion}, target={package.TargetVersion}, update={package.HasUpdate}");
+        }
+    }
+}
+```
+
+`SetFixedVersion` accepts `null` or an empty string to clear a pin. Package status includes the installed version, target version, installation state, update state, and required registry state. `HasUpdate` is true only when an installed package differs from its target; use `IsInstalled` to identify packages that still need installation.
+
+Installing packages can trigger a Unity domain reload and interrupt a status query in progress. If that happens, call `GetPackageStatusesAsync()` again after the reload.
