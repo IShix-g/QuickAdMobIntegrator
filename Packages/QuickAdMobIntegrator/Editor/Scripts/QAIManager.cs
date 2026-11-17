@@ -87,6 +87,26 @@ namespace QuickAdMobIntegrator.Editor
             return details;
         }
 
+        internal async Task<PackageInfoDetails> FetchPackageInfoForApi(
+            PackageSettings.IScope scope,
+            IEnumerable<PackageInfo> installedPackages,
+            CancellationToken token)
+        {
+            var details = await _fetcher.FetchPackageInfo(scope.OpenUpmInfoUrl, true, installedPackages, token);
+            if (details.Remote != default)
+            {
+                details.Remote.DisplayName = (details.Remote.DisplayName ?? string.Empty)
+                    .Replace("Google Mobile Ads", string.Empty)
+                    .Replace("Mediation", string.Empty)
+                    .Replace("for Unity", string.Empty);
+                if (scope.HasFixedVersion)
+                {
+                    details.SetFixedVersion(scope.FixedVersion);
+                }
+            }
+            return details;
+        }
+
         static void InvokeOnMainThread(SynchronizationContext context, Action action)
         {
             if (action == default)
